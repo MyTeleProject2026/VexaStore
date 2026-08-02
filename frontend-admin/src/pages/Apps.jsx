@@ -2,25 +2,25 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api, getApiErrorMessage } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import {
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Package,
+import { 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Package, 
   Eye,
   Smartphone,
   Apple,
-  Window,
-  Linux,
+  Monitor,
+  Terminal,
 } from 'lucide-react';
 
 const OS_ICONS = {
   ios: Apple,
   android: Smartphone,
-  windows: Window,
+  windows: Monitor,
   macos: Apple,
-  linux: Linux,
+  linux: Terminal,
 };
 
 export default function Apps() {
@@ -29,11 +29,11 @@ export default function Apps() {
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState(null);
   const { showSuccess, showError } = useNotification();
-  
+
   useEffect(() => {
     loadApps();
   }, []);
-  
+
   async function loadApps() {
     try {
       setLoading(true);
@@ -45,7 +45,7 @@ export default function Apps() {
       setLoading(false);
     }
   }
-  
+
   async function handleDelete(id) {
     if (!confirm('Are you sure you want to delete this app?')) return;
     try {
@@ -59,12 +59,12 @@ export default function Apps() {
       setDeleting(null);
     }
   }
-  
+
   const filteredApps = apps.filter(app =>
     app.name.toLowerCase().includes(search.toLowerCase()) ||
     app.description?.toLowerCase().includes(search.toLowerCase())
   );
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -72,7 +72,7 @@ export default function Apps() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
