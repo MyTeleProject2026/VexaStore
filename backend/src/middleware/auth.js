@@ -9,7 +9,7 @@ const authAdmin = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ success: false, message: 'Authentication required' });
     }
-    
+
     const token = authHeader.slice(7).trim();
     const decoded = jwt.verify(token, JWT_SECRET);
     req.admin = decoded;
