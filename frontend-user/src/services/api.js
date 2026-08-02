@@ -23,19 +23,10 @@ export const getApiErrorMessage = (err) => {
 };
 
 export const appApi = {
-  // Get all apps (with filters)
   getApps: (params = {}) => api.get('/apps', { params }),
-  
-  // Get single app by slug
   getApp: (slug) => api.get(`/apps/${slug}`),
-  
-  // Get app versions for specific OS
   getAppVersions: (slug, os) => api.get(`/apps/${slug}/versions/${os}`),
-  
-  // Get categories
   getCategories: () => api.get('/categories'),
-  
-  // Track download
   trackDownload: (data) => api.post('/downloads/track', data),
 };
 
