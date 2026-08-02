@@ -9,14 +9,14 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { showError } = useNotification();
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       showError('Please enter email and password');
       return;
     }
-    
+
     try {
       setLoading(true);
       const res = await api.adminLogin({ email, password });
@@ -29,7 +29,7 @@ export default function Login({ onLogin }) {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
       <div className="glass-card max-w-md w-full p-8">
