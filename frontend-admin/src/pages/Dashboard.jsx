@@ -1,24 +1,19 @@
 import { useState, useEffect } from 'react';
 import { api, getApiErrorMessage } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import {
-  Package,
-  Download,
-  TrendingUp,
-  Smartphone,
-  Laptop,
-  Apple,
-  Window,
-  Linux,
+import { 
+  Package, 
+  Download, 
+  TrendingUp, 
+  Smartphone, 
+  Apple, 
+  Monitor, 
+  Terminal,
   RefreshCw,
-  ArrowUp,
-  ArrowDown,
 } from 'lucide-react';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -33,9 +28,9 @@ const COLORS = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
 const OS_ICONS = {
   ios: Apple,
   android: Smartphone,
-  windows: Window,
+  windows: Monitor,
   macos: Apple,
-  linux: Linux,
+  linux: Terminal,
 };
 
 export default function Dashboard() {
@@ -48,11 +43,11 @@ export default function Dashboard() {
   });
   const [period, setPeriod] = useState('30d');
   const { showError } = useNotification();
-  
+
   useEffect(() => {
     loadStats();
   }, [period]);
-  
+
   async function loadStats() {
     try {
       setLoading(true);
@@ -66,7 +61,7 @@ export default function Dashboard() {
       setLoading(false);
     }
   }
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -74,12 +69,12 @@ export default function Dashboard() {
       </div>
     );
   }
-  
+
   const totalDownloads = stats.total || 0;
   const osData = stats.by_os || [];
   const topApps = stats.top_apps || [];
   const dailyData = stats.daily || [];
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -112,28 +107,23 @@ export default function Dashboard() {
         <div className="glass-card p-4">
           <p className="text-sm text-text-secondary">Total Downloads</p>
           <p className="text-2xl font-bold text-white mt-1">{totalDownloads.toLocaleString()}</p>
-          <p className="text-xs text-emerald-400 mt-1">+12.5% this period</p>
         </div>
         <div className="glass-card p-4">
           <p className="text-sm text-text-secondary">Apps</p>
-          <p className="text-2xl font-bold text-white mt-1">{stats.top_apps?.length || 0}</p>
-          <p className="text-xs text-text-secondary mt-1">Active apps</p>
+          <p className="text-2xl font-bold text-white mt-1">{topApps?.length || 0}</p>
+        </div>
+        <div className="glass-card p-4">
+          <p className="text-sm text-text-secondary">Platforms</p>
+          <p className="text-2xl font-bold text-white mt-1">{osData.length || 0}</p>
         </div>
         <div className="glass-card p-4">
           <p className="text-sm text-text-secondary">Avg Rating</p>
           <p className="text-2xl font-bold text-white mt-1">4.8</p>
-          <p className="text-xs text-emerald-400 mt-1">⭐ Excellent</p>
-        </div>
-        <div className="glass-card p-4">
-          <p className="text-sm text-text-secondary">Platforms</p>
-          <p className="text-2xl font-bold text-white mt-1">5</p>
-          <p className="text-xs text-text-secondary mt-1">iOS, Android, Windows, macOS, Linux</p>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Daily Downloads Chart */}
         <div className="glass-card p-6 lg:col-span-2">
           <h3 className="text-sm font-semibold text-white mb-4">Downloads Over Time</h3>
           <div className="h-64">
@@ -144,8 +134,6 @@ export default function Dashboard() {
                 <YAxis stroke="#94a3b8" fontSize={11} />
                 <Tooltip
                   contentStyle={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
-                  labelStyle={{ color: '#94a3b8' }}
-                  itemStyle={{ color: '#ffffff' }}
                 />
                 <Line type="monotone" dataKey="count" stroke="#06b6d4" strokeWidth={2} dot={false} />
               </LineChart>
@@ -153,7 +141,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* OS Distribution */}
         <div className="glass-card p-6">
           <h3 className="text-sm font-semibold text-white mb-4">By Platform</h3>
           <div className="h-48">
@@ -178,17 +165,6 @@ export default function Dashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3 mt-2">
-            {osData.map((item, idx) => {
-              const Icon = OS_ICONS[item.os] || Download;
-              return (
-                <div key={item.os} className="flex items-center gap-1 text-xs text-text-secondary">
-                  <Icon size={12} style={{ color: COLORS[idx % COLORS.length] }} />
-                  <span>{item.os}: {item.count}</span>
-                </div>
-              );
-            })}
           </div>
         </div>
       </div>
