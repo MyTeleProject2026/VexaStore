@@ -37,7 +37,6 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    // Update last login
     await pool.query(
       'UPDATE admins SET last_login = NOW() WHERE id = ?',
       [admin.id]
@@ -139,7 +138,6 @@ router.post('/apps', authAdmin, upload.single('icon'), async (req, res, next) =>
     
     const icon_url = req.file ? `/uploads/apps/${req.file.filename}` : null;
     
-    // Check if slug exists
     const [existing] = await pool.query('SELECT id FROM apps WHERE slug = ?', [slug]);
     if (existing.length) {
       return res.status(400).json({ success: false, message: 'Slug already exists' });
@@ -213,7 +211,6 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Get icon to delete
     const [rows] = await pool.query('SELECT icon_url FROM apps WHERE id = ?', [id]);
     if (rows.length && rows[0].icon_url) {
       const filePath = path.join(__dirname, '../../', rows[0].icon_url);
@@ -222,7 +219,6 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
       }
     }
     
-    // Delete versions and logs
     await pool.query('DELETE FROM download_logs WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_versions WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_reviews WHERE app_id = ?', [id]);
@@ -255,13 +251,11 @@ router.post('/versions', authAdmin, upload.single('file'), async (req, res, next
       ? `${(file_size / (1024 * 1024)).toFixed(1)} MB` 
       : `${(file_size / 1024).toFixed(1)} KB`;
     
-    // Check if app exists
     const [appRows] = await pool.query('SELECT id FROM apps WHERE id = ? AND is_active = 1', [app_id]);
     if (!appRows.length) {
       return res.status(404).json({ success: false, message: 'App not found' });
     }
     
-    // If this is latest, update other versions for this OS
     if (is_latest === '1' || is_latest === 1) {
       await pool.query(
         'UPDATE app_versions SET is_latest = 0 WHERE app_id = ? AND os = ?',
@@ -293,7 +287,6 @@ router.delete('/versions/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Get file to delete
     const [rows] = await pool.query('SELECT file_url FROM app_versions WHERE id = ?', [id]);
     if (rows.length && rows[0].file_url) {
       const filePath = path.join(__dirname, '../../', rows[0].file_url);
