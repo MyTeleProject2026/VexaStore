@@ -13,11 +13,11 @@ function AppContent() {
   const [maintenance, setMaintenance] = useState({ isEnabled: false, message: '' });
   const [loading, setLoading] = useState(true);
   const { showError } = useNotification();
-  
+
   useEffect(() => {
     checkMaintenance();
   }, []);
-  
+
   async function checkMaintenance() {
     try {
       const res = await api.get('/maintenance/status');
@@ -33,7 +33,7 @@ function AppContent() {
       setLoading(false);
     }
   }
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-dark-bg">
@@ -44,11 +44,11 @@ function AppContent() {
       </div>
     );
   }
-  
+
   if (maintenance.isEnabled) {
     return <MaintenancePage message={maintenance.message} onRefresh={checkMaintenance} />;
   }
-  
+
   return (
     <BrowserRouter>
       <Routes>
