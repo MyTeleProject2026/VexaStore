@@ -1,13 +1,14 @@
-import { Smartphone, Laptop, Apple, Window, Linux, AppWindow } from 'lucide-react';
+import { Smartphone, Laptop, Apple, Windows, Linux, AppWindow } from 'lucide-react';
 
 const OS_OPTIONS = [
   { value: 'ios', label: 'iOS', icon: Apple },
   { value: 'android', label: 'Android', icon: Smartphone },
-  { value: 'windows', label: 'Windows', icon: Window },
+  { value: 'windows', label: 'Windows', icon: Windows },   // ← Changed
   { value: 'macos', label: 'macOS', icon: Apple },
   { value: 'linux', label: 'Linux', icon: Linux },
   { value: '', label: 'All', icon: AppWindow },
 ];
+
 
 export default function OSFilter({ selected, onChange, className = '' }) {
   return (
