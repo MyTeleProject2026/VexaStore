@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
 
-// Get maintenance status (public)
+// ============================================================
+// GET: Maintenance status (public)
+// ============================================================
 router.get('/status', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -25,7 +27,9 @@ router.get('/status', async (req, res, next) => {
   }
 });
 
-// Toggle maintenance (admin only)
+// ============================================================
+// POST: Toggle maintenance (admin only)
+// ============================================================
 router.post('/toggle', authAdmin, async (req, res, next) => {
   try {
     const { enabled, message, scheduled_end } = req.body;
