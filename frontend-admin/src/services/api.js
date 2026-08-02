@@ -41,14 +41,14 @@ export const getApiErrorMessage = (err) => {
   return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
 };
 
-// Admin API methods
+// Admin API methods - ALL paths now include '/api' prefix
 export const api = {
   // Auth
-  adminLogin: (data) => adminApi.post('/admin/login', data),
+  adminLogin: (data) => adminApi.post('/api/admin/login', data),   // ✅ FIXED
 
   // Apps
-  getApps: () => adminApi.get('/admin/apps'),
-  getApp: (id) => adminApi.get(`/admin/apps/${id}`),
+  getApps: () => adminApi.get('/api/admin/apps'),
+  getApp: (id) => adminApi.get(`/api/admin/apps/${id}`),
   createApp: (data) => {
     const formData = new FormData();
     Object.keys(data).forEach(key => {
@@ -56,7 +56,7 @@ export const api = {
         formData.append(key, data[key]);
       }
     });
-    return adminApi.post('/admin/apps', formData, {
+    return adminApi.post('/api/admin/apps', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -67,11 +67,11 @@ export const api = {
         formData.append(key, data[key]);
       }
     });
-    return adminApi.put(`/admin/apps/${id}`, formData, {
+    return adminApi.put(`/api/admin/apps/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  deleteApp: (id) => adminApi.delete(`/admin/apps/${id}`),
+  deleteApp: (id) => adminApi.delete(`/api/admin/apps/${id}`),
 
   // Versions
   addVersion: (data) => {
@@ -81,19 +81,19 @@ export const api = {
         formData.append(key, data[key]);
       }
     });
-    return adminApi.post('/admin/versions', formData, {
+    return adminApi.post('/api/admin/versions', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  deleteVersion: (id) => adminApi.delete(`/admin/versions/${id}`),
+  deleteVersion: (id) => adminApi.delete(`/api/admin/versions/${id}`),
 
   // Categories
-  getCategories: () => adminApi.get('/categories'),
+  getCategories: () => adminApi.get('/api/categories'),
 
   // Downloads
-  getDownloadStats: (period) => adminApi.get(`/downloads/stats?period=${period || '30d'}`),
+  getDownloadStats: (period) => adminApi.get(`/api/downloads/stats?period=${period || '30d'}`),
 
   // Maintenance
-  getMaintenanceStatus: () => adminApi.get('/maintenance/status'),
-  toggleMaintenance: (data) => adminApi.post('/admin/maintenance/toggle', data),
+  getMaintenanceStatus: () => adminApi.get('/api/maintenance/status'),
+  toggleMaintenance: (data) => adminApi.post('/api/admin/maintenance/toggle', data),
 };
