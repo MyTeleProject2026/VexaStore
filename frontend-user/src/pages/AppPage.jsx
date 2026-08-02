@@ -29,7 +29,6 @@ export default function AppPage() {
       setLoading(true);
       const res = await appApi.getApp(slug);
       setApp(res.data?.data || null);
-      // Set default OS to first available
       const versions = res.data?.data?.versions || [];
       if (versions.length > 0) {
         setSelectedOS(versions[0].os);
@@ -61,7 +60,6 @@ export default function AppPage() {
   }, {});
 
   const availableOS = Object.keys(versionsByOS);
-
   const currentVersions = selectedOS ? versionsByOS[selectedOS] || [] : [];
 
   return (
@@ -70,7 +68,6 @@ export default function AppPage() {
         <ChevronLeft size={20} /> Back to Home
       </Link>
 
-      {/* App Header */}
       <div className="glass-card p-6 flex flex-col md:flex-row gap-6">
         <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-dark-bg border border-dark-border flex-shrink-0 mx-auto md:mx-0">
           {app.icon_url ? (
@@ -101,7 +98,6 @@ export default function AppPage() {
         </div>
       </div>
 
-      {/* OS Selection & Download */}
       <div className="glass-card p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Download for</h2>
         {availableOS.length > 0 ? (
@@ -135,7 +131,6 @@ export default function AppPage() {
         )}
       </div>
 
-      {/* Screenshots */}
       {app.screenshots && app.screenshots.length > 0 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Screenshots</h2>
@@ -147,7 +142,6 @@ export default function AppPage() {
         </div>
       )}
 
-      {/* Reviews */}
       {app.reviews && app.reviews.length > 0 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Reviews</h2>
