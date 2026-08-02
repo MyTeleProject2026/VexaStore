@@ -6,20 +6,18 @@ import { useNotification } from '../hooks/useNotification';
 export default function DownloadButton({ version, appId, appSlug }) {
   const [downloading, setDownloading] = useState(false);
   const { showSuccess, showError } = useNotification();
-  
+
   const handleDownload = async () => {
     try {
       setDownloading(true);
-      // Track download
       await appApi.trackDownload({
         app_id: appId,
         version_id: version.id,
         os: version.os,
         user_agent: navigator.userAgent,
-        country: 'US', // Could get from IP
+        country: 'US',
       });
       showSuccess(`Downloading ${version.os} version...`);
-      // Simulate download start (in production, redirect to file URL)
       const fileUrl = `${import.meta.env.VITE_API_BASE_URL}${version.file_url}`;
       window.open(fileUrl, '_blank');
     } catch (err) {
@@ -28,7 +26,7 @@ export default function DownloadButton({ version, appId, appSlug }) {
       setDownloading(false);
     }
   };
-  
+
   const osLabels = {
     ios: 'iOS',
     android: 'Android',
@@ -36,7 +34,7 @@ export default function DownloadButton({ version, appId, appSlug }) {
     macos: 'macOS',
     linux: 'Linux',
   };
-  
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-dark-bg/50 border border-dark-border hover:border-accent-primary/20 transition">
       <div>
