@@ -26,6 +26,8 @@ if (!fs.existsSync(uploadDir)) {
   console.log('✅ Uploads directory created');
 }
 
+app.set('trust proxy', true);
+
 // ============================================================
 // Middleware
 // ============================================================
