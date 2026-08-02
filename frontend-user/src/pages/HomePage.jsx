@@ -23,17 +23,25 @@ export default function HomePage() {
   async function loadData() {
     try {
       setLoading(true);
+      console.log('🔄 Loading data...');
+      console.log('📡 API URL:', import.meta.env.VITE_API_BASE_URL);
+      
       const [appsRes, featuredRes, categoriesRes] = await Promise.all([
         appApi.getApps({ limit: 20 }),
         appApi.getApps({ featured: true, limit: 10 }),
         appApi.getCategories(),
       ]);
+      
+      console.log('📊 Apps response:', appsRes);
+      console.log('⭐ Featured response:', featuredRes);
+      console.log('📁 Categories response:', categoriesRes);
+      
       setApps(appsRes.data?.data || []);
       setFeatured(featuredRes.data?.data || []);
       setCategories(categoriesRes.data?.data || []);
     } catch (err) {
+      console.error('❌ Failed to load data:', err);
       showError('Failed to load apps');
-      console.error(err);
     } finally {
       setLoading(false);
     }
