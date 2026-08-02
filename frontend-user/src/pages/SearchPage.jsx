@@ -11,7 +11,7 @@ export default function SearchPage() {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showError } = useNotification();
-  
+
   useEffect(() => {
     if (query) {
       searchApps();
@@ -20,7 +20,7 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, [query]);
-  
+
   async function searchApps() {
     try {
       setLoading(true);
@@ -32,11 +32,11 @@ export default function SearchPage() {
       setLoading(false);
     }
   }
-  
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin"></div></div>;
   }
-  
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ export default function SearchPage() {
       </div>
       {query && <p className="text-text-secondary">Showing results for: <span className="text-white font-medium">"{query}"</span></p>}
       {apps.length > 0 ? (
-        <div className="space-y-3 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
           {apps.map((app) => <AppCard key={app.id} app={app} />)}
         </div>
       ) : (
