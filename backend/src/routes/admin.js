@@ -8,7 +8,7 @@ const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
+const JWT_SECRET = process.env.JWT_SECRET || '601a209a777e4a2ffadb930cd6ec17dca3ddfac2932394e47dc73ecbdfbf7842';
 
 // ============================================================
 // POST: Admin Login
@@ -61,6 +61,13 @@ router.post('/login', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// ============================================================
+// GET: Test route (to verify router is mounted)
+// ============================================================
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Admin router is working!' });
 });
 
 // ============================================================
@@ -305,11 +312,6 @@ router.delete('/versions/:id', authAdmin, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
-
-// Add this test route
-router.get('/test', (req, res) => {
-  res.json({ success: true, message: 'Admin router is working!' });
 });
 
 module.exports = router;
