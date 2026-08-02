@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, getApiErrorMessage } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { ArrowLeft, Plus, Trash2, Download, Smartphone, Apple, Window, Linux } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Download, Smartphone, Apple, Monitor, Terminal } from 'lucide-react';
 
 const OS_LABELS = {
   ios: 'iOS',
@@ -15,9 +15,9 @@ const OS_LABELS = {
 const OS_ICONS = {
   ios: Apple,
   android: Smartphone,
-  windows: Window,
+  windows: Monitor,
   macos: Apple,
-  linux: Linux,
+  linux: Terminal,
 };
 
 export default function Versions() {
@@ -38,11 +38,11 @@ export default function Versions() {
     is_latest: 1,
     file: null,
   });
-  
+
   useEffect(() => {
     loadApp();
   }, [id]);
-  
+
   async function loadApp() {
     try {
       setLoading(true);
@@ -55,21 +55,21 @@ export default function Versions() {
       setLoading(false);
     }
   }
-  
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setForm(prev => ({ ...prev, file }));
     }
   };
-  
+
   const handleAddVersion = async (e) => {
     e.preventDefault();
     if (!form.version || !form.os || !form.file) {
       showError('Please fill in all required fields');
       return;
     }
-    
+
     try {
       setSubmitting(true);
       const data = new FormData();
@@ -80,7 +80,7 @@ export default function Versions() {
           data.append(key, form[key]);
         }
       });
-      
+
       await api.addVersion(data);
       showSuccess('Version added successfully!');
       setShowAddForm(false);
@@ -92,7 +92,7 @@ export default function Versions() {
       setSubmitting(false);
     }
   };
-  
+
   const handleDeleteVersion = async (versionId) => {
     if (!confirm('Delete this version?')) return;
     try {
@@ -106,7 +106,7 @@ export default function Versions() {
       setDeleting(null);
     }
   };
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -114,7 +114,7 @@ export default function Versions() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <Link to="/apps" className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition">
