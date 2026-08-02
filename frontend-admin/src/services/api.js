@@ -12,6 +12,7 @@ export const adminApi = axios.create({
   },
 });
 
+// Request interceptor
 adminApi.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -23,6 +24,7 @@ adminApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor
 adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -43,7 +45,7 @@ export const getApiErrorMessage = (err) => {
 export const api = {
   // Auth
   adminLogin: (data) => adminApi.post('/admin/login', data),
-  
+
   // Apps
   getApps: () => adminApi.get('/admin/apps'),
   getApp: (id) => adminApi.get(`/admin/apps/${id}`),
@@ -70,7 +72,7 @@ export const api = {
     });
   },
   deleteApp: (id) => adminApi.delete(`/admin/apps/${id}`),
-  
+
   // Versions
   addVersion: (data) => {
     const formData = new FormData();
@@ -84,13 +86,13 @@ export const api = {
     });
   },
   deleteVersion: (id) => adminApi.delete(`/admin/versions/${id}`),
-  
+
   // Categories
   getCategories: () => adminApi.get('/categories'),
-  
+
   // Downloads
   getDownloadStats: (period) => adminApi.get(`/downloads/stats?period=${period || '30d'}`),
-  
+
   // Maintenance
   getMaintenanceStatus: () => adminApi.get('/maintenance/status'),
   toggleMaintenance: (data) => adminApi.post('/admin/maintenance/toggle', data),
