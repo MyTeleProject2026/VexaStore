@@ -1,12 +1,12 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Download, Smartphone, Laptop, Apple, Monitor, Linux, Home } from 'lucide-react';
+import { Search, Menu, X, Download, Smartphone, Apple, Monitor, Terminal, Home } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Layout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -14,15 +14,15 @@ export default function Layout() {
       setMobileMenuOpen(false);
     }
   };
-  
+
   const categories = [
     { slug: 'ios', label: 'iOS', icon: Apple },
     { slug: 'android', label: 'Android', icon: Smartphone },
-    { slug: 'windows', label: 'Windows', icon: Monitor }, // ← Changed to Monitor
+    { slug: 'windows', label: 'Windows', icon: Monitor },
     { slug: 'macos', label: 'macOS', icon: Apple },
-    { slug: 'linux', label: 'Linux', icon: Linux },
+    { slug: 'linux', label: 'Linux', icon: Terminal },
   ];
-  
+
   return (
     <div className="min-h-screen bg-dark-bg text-white">
       {/* Top Bar */}
