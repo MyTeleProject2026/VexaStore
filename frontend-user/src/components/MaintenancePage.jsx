@@ -2,13 +2,13 @@ import { RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 
 export default function MaintenancePage({ message, onRefresh }) {
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await onRefresh();
     setRefreshing(false);
   };
-  
+
   return (
     <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
       <div className="glass-card max-w-md w-full p-8 text-center">
