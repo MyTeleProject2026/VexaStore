@@ -3,12 +3,11 @@ import { Smartphone, Laptop, Apple, Windows, Linux, AppWindow } from 'lucide-rea
 const OS_OPTIONS = [
   { value: 'ios', label: 'iOS', icon: Apple },
   { value: 'android', label: 'Android', icon: Smartphone },
-  { value: 'windows', label: 'Windows', icon: Windows },   // ← Changed
+  { value: 'windows', label: 'Windows', icon: Windows },
   { value: 'macos', label: 'macOS', icon: Apple },
   { value: 'linux', label: 'Linux', icon: Linux },
   { value: '', label: 'All', icon: AppWindow },
 ];
-
 
 export default function OSFilter({ selected, onChange, className = '' }) {
   return (
