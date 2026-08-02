@@ -1,37 +1,33 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Package,
-  BarChart3,
-  Settings,
-  Shield,
+import { 
+  LayoutDashboard, 
+  Package, 
+  BarChart3, 
+  Settings, 
+  Shield, 
   LogOut,
   Download,
   Menu,
   X,
-  Smartphone,
-  Apple,
-  Window,
-  Linux,
 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Layout({ onLogout, children }) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/apps', label: 'Apps', icon: Package },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/maintenance', label: 'Maintenance', icon: Shield },
   ];
-  
+
   const handleLogout = () => {
     onLogout();
     navigate('/');
   };
-  
+
   return (
     <div className="flex min-h-screen bg-dark-bg">
       {/* Mobile sidebar toggle */}
@@ -86,7 +82,7 @@ export default function Layout({ onLogout, children }) {
           <div className="border-t border-dark-border pt-4 space-y-2">
             <div className="px-4 py-2 text-xs text-text-secondary">
               <p className="font-semibold text-white">VexaTrade Ecosystem</p>
-              <p>v1.0.0</p>
+              <p>v2.0.0</p>
             </div>
             <button
               onClick={handleLogout}
