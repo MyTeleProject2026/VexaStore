@@ -21,11 +21,11 @@ export default function AddApp() {
     icon: null,
     icon_preview: null,
   });
-  
+
   useEffect(() => {
     loadCategories();
   }, []);
-  
+
   async function loadCategories() {
     try {
       const res = await api.getCategories();
@@ -37,27 +37,27 @@ export default function AddApp() {
       console.error('Failed to load categories:', err);
     }
   }
-  
+
   function generateSlug(name) {
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
   }
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'name') {
       const slug = generateSlug(value);
       setForm(prev => ({ ...prev, [name]: value, slug }));
     } else {
-      setForm(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
+      setForm(prev => ({ 
+        ...prev, 
+        [name]: type === 'checkbox' ? (checked ? 1 : 0) : value 
       }));
     }
   };
-  
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -68,18 +68,18 @@ export default function AddApp() {
       }));
     }
   };
-  
+
   const removeIcon = () => {
     setForm(prev => ({ ...prev, icon: null, icon_preview: null }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.slug || !form.category_id) {
       showError('Please fill in all required fields');
       return;
     }
-    
+
     try {
       setLoading(true);
       const data = new FormData();
@@ -90,7 +90,7 @@ export default function AddApp() {
           data.append(key, form[key]);
         }
       });
-      
+
       await api.createApp(data);
       showSuccess('App created successfully!');
       navigate('/apps');
@@ -100,7 +100,7 @@ export default function AddApp() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="space-y-6">
       <Link to="/apps" className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition">
