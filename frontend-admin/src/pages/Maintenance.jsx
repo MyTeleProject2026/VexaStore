@@ -12,11 +12,11 @@ export default function Maintenance() {
     scheduled_end: '',
   });
   const { showSuccess, showError } = useNotification();
-  
+
   useEffect(() => {
     loadSettings();
   }, []);
-  
+
   async function loadSettings() {
     try {
       setLoading(true);
@@ -34,7 +34,7 @@ export default function Maintenance() {
       setLoading(false);
     }
   }
-  
+
   async function handleToggle() {
     try {
       setSaving(true);
@@ -52,7 +52,7 @@ export default function Maintenance() {
       setSaving(false);
     }
   }
-  
+
   async function handleSaveMessage() {
     try {
       setSaving(true);
@@ -68,7 +68,7 @@ export default function Maintenance() {
       setSaving(false);
     }
   }
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -76,7 +76,7 @@ export default function Maintenance() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
