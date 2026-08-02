@@ -82,4 +82,132 @@ export default function Analytics() {
             onChange={(e) => setPeriod(e.target.value)}
             className="rounded-xl bg-dark-card border border-dark-border px-4 py-2 text-white text-sm outline-none focus:border-accent-primary"
           >
-            <option value="
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+          </select>
+          <button
+            onClick={loadStats}
+            className="p-2 rounded-xl border border-dark-border text-text-secondary hover:text-white hover:border-accent-primary/30 transition"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="glass-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-secondary">Total Downloads</p>
+            <Download size={18} className="text-accent-primary" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{totalDownloads.toLocaleString()}</p>
+        </div>
+        <div className="glass-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-secondary">Platforms</p>
+            <TrendingUp size={18} className="text-accent-primary" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">{osData.length}</p>
+        </div>
+        <div className="glass-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-secondary">Top App</p>
+            <TrendingUp size={18} className="text-accent-primary" />
+          </div>
+          <p className="text-lg font-bold text-white mt-1 truncate">
+            {topApps[0]?.name || 'N/A'}
+          </p>
+        </div>
+        <div className="glass-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-secondary">Avg Daily</p>
+            <TrendingUp size={18} className="text-accent-primary" />
+          </div>
+          <p className="text-2xl font-bold text-white mt-1">
+            {dailyData.length > 0 
+              ? Math.round(dailyData.reduce((acc, d) => acc + d.count, 0) / dailyData.length).toLocaleString()
+              : 0
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="glass-card p-6 lg:col-span-2">
+          <h3 className="text-sm font-semibold text-white mb-4">Download Trends</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} />
+                <YAxis stroke="#94a3b8" fontSize={11} />
+                <Tooltip
+                  contentStyle={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
+                />
+                <Bar dataKey="count" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <h3 className="text-sm font-semibold text-white mb-4">Platform Distribution</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={osData}
+                  dataKey="count"
+                  nameKey="os"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={70}
+                  label={({ os, percent }) => `${os}: ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {osData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: '#0a0e1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Apps */}
+      <div className="glass-card p-6">
+        <h3 className="text-sm font-semibold text-white mb-4">Top Performing Apps</h3>
+        {topApps.length > 0 ? (
+          <div className="space-y-3">
+            {topApps.map((app, idx) => (
+              <div key={app.id} className="flex items-center justify-between p-3 rounded-xl bg-dark-bg/50 border border-dark-border">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-sm font-bold text-accent-primary w-6 text-center">#{idx + 1}</span>
+                  <span className="text-white font-medium truncate">{app.name}</span>
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <span className="text-sm text-text-secondary">{app.downloads.toLocaleString()} downloads</span>
+                  <div className="w-24 h-2 rounded-full bg-dark-border overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-accent-primary"
+                      style={{ width: `${(app.downloads / (topApps[0]?.downloads || 1)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-text-secondary text-center py-4">No download data available yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
