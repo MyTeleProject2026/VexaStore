@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 
-// Track download - Public
+// ============================================================
+// POST: Track download
+// ============================================================
 router.post('/track', async (req, res, next) => {
   try {
     const { app_id, version_id, os, user_agent, ip, country } = req.body;
@@ -36,7 +38,9 @@ router.post('/track', async (req, res, next) => {
   }
 });
 
-// Get download stats - Public
+// ============================================================
+// GET: Download statistics
+// ============================================================
 router.get('/stats', async (req, res, next) => {
   try {
     const { period = '30d' } = req.query;
@@ -73,7 +77,7 @@ router.get('/stats', async (req, res, next) => {
        LIMIT 10`
     );
     
-    // Downloads by day (last 30 days)
+    // Downloads by day
     const [dailyRows] = await pool.query(
       `SELECT DATE(created_at) as date, COUNT(*) as count 
        FROM download_logs 
