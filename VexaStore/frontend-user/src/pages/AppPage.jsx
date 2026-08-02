@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { ChevronLeft, Download, Star, Share2, ExternalLink, Smartphone, Laptop, Apple, Window, Linux } from 'lucide-react';
+import { ChevronLeft, Download, Star, Share2, ExternalLink, Smartphone, Laptop, Apple, Windows, Linux } from 'lucide-react';
 import DownloadButton from '../components/DownloadButton';
 
 const OS_ICONS = {
   ios: Apple,
   android: Smartphone,
-  windows: Window,
+  windows: Windows,
   macos: Apple,
   linux: Linux,
 };
@@ -19,11 +19,11 @@ export default function AppPage() {
   const [loading, setLoading] = useState(true);
   const { showError, showSuccess } = useNotification();
   const [selectedOS, setSelectedOS] = useState('');
-  
+
   useEffect(() => {
     loadApp();
   }, [slug]);
-  
+
   async function loadApp() {
     try {
       setLoading(true);
@@ -40,11 +40,11 @@ export default function AppPage() {
       setLoading(false);
     }
   }
-  
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin"></div></div>;
   }
-  
+
   if (!app) {
     return (
       <div className="glass-card p-8 text-center text-text-secondary">
@@ -53,17 +53,17 @@ export default function AppPage() {
       </div>
     );
   }
-  
+
   const versionsByOS = (app.versions || []).reduce((acc, v) => {
     if (!acc[v.os]) acc[v.os] = [];
     acc[v.os].push(v);
     return acc;
   }, {});
-  
+
   const availableOS = Object.keys(versionsByOS);
-  
+
   const currentVersions = selectedOS ? versionsByOS[selectedOS] || [] : [];
-  
+
   return (
     <div className="space-y-6">
       <Link to="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition">
