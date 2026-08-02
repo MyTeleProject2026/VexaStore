@@ -10,9 +10,11 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME || 'vexastore',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: {
+        rejectUnauthorized: false   // ✅ This fixes the "insecure transport" error
+    }
 });
-
 
 // Test connection
 async function testConnection() {
