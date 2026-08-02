@@ -22,9 +22,21 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  // Accept images and app files
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/octet-stream', 'application/vnd.android.package-archive'];
-  if (allowedTypes.includes(file.mimetype) || file.originalname.endsWith('.apk') || file.originalname.endsWith('.ipa') || file.originalname.endsWith('.dmg') || file.originalname.endsWith('.exe') || file.originalname.endsWith('.deb') || file.originalname.endsWith('.rpm')) {
+  const allowedTypes = [
+    'image/jpeg', 'image/png', 'image/webp', 
+    'application/octet-stream', 
+    'application/vnd.android.package-archive',
+    'application/x-ms-installer',
+    'application/x-apple-diskimage',
+    'application/x-debian-package',
+    'application/x-rpm'
+  ];
+  
+  const allowedExtensions = ['.apk', '.ipa', '.dmg', '.exe', '.deb', '.rpm', '.png', '.jpg', '.jpeg', '.webp'];
+  
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error('File type not allowed'), false);
