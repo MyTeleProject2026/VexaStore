@@ -307,4 +307,9 @@ router.delete('/versions/:id', authAdmin, async (req, res, next) => {
   }
 });
 
+// Add this test route
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Admin router is working!' });
+});
+
 module.exports = router;
