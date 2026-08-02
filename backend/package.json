@@ -1,6 +1,6 @@
 {
   "name": "vexastore-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "VexaStore API - Official App Hub of VexaTrade Blockchain Ecosystem",
   "main": "src/index.js",
   "scripts": {
@@ -8,19 +8,19 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.21.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "mysql2": "^3.5.1",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.3",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.0",
-    "multer": "^1.4.5",
-    "uuid": "^9.0.0",
-    "helmet": "^7.0.0",
-    "express-rate-limit": "^6.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^10.0.0",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0",
     "mime-types": "^2.1.35"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^3.1.7"
   }
 }
