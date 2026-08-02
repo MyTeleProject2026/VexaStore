@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { adminApi } from './services/api';
+import { api } from './services/api';
 import { NotificationProvider, useNotification } from './hooks/useNotification';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -16,7 +16,7 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const { showError } = useNotification();
-  
+
   useEffect(() => {
     const token = localStorage.getItem('vexastore_admin_token');
     if (token) {
@@ -24,17 +24,17 @@ function AppContent() {
     }
     setLoading(false);
   }, []);
-  
+
   const handleLogin = (token) => {
     localStorage.setItem('vexastore_admin_token', token);
     setIsAuthenticated(true);
   };
-  
+
   const handleLogout = () => {
     localStorage.removeItem('vexastore_admin_token');
     setIsAuthenticated(false);
   };
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-dark-bg">
@@ -45,11 +45,11 @@ function AppContent() {
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
-  
+
   return (
     <BrowserRouter>
       <Layout onLogout={handleLogout}>
