@@ -12,7 +12,6 @@ import { NotificationProvider, useNotification } from './hooks/useNotification';
 function AppContent() {
   const [maintenance, setMaintenance] = useState({ isEnabled: false, message: '' });
   const [loading, setLoading] = useState(true);
-  const { showError } = useNotification();
 
   useEffect(() => {
     checkMaintenance();
@@ -53,9 +52,6 @@ function AppContent() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
           <Route index element={<HomePage />} />
           <Route path="category/:slug" element={<CategoryPage />} />
           <Route path="app/:slug" element={<AppPage />} />
