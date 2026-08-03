@@ -11,7 +11,7 @@ const upload = require('../middleware/upload');
 const JWT_SECRET = process.env.JWT_SECRET || '601a209a777e4a2ffadb930cd6ec17dca3ddfac2932394e47dc73ecbdfbf7842';
 
 // ============================================================
-// POST: Admin Login
+// POST: Admin Login (using environment variables)
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -21,29 +21,25 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
     
-    const [rows] = await pool.query(
-      'SELECT * FROM admins WHERE email = ? AND is_active = 1',
-      [email.trim().toLowerCase()]
-    );
+    // Check against environment variables
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@vexastore.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
     
-    if (!rows.length) {
+    if (email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    const admin = rows[0];
-    const valid = await bcrypt.compare(password, admin.password);
-    
-    if (!valid) {
+    if (password !== adminPassword) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    await pool.query(
-      'UPDATE admins SET last_login = NOW() WHERE id = ?',
-      [admin.id]
-    );
-    
+    // Generate JWT token
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: admin.role },
+      { 
+        id: 1, 
+        email: adminEmail, 
+        role: 'super_admin' 
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -52,10 +48,10 @@ router.post('/login', async (req, res, next) => {
       success: true,
       token,
       admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role
+        id: 1,
+        email: adminEmail,
+        name: 'VexaStore Admin',
+        role: 'super_admin'
       }
     });
   } catch (error) {
@@ -63,8 +59,9 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-
-// Add this test route
+// ============================================================
+// GET: Test route (to verify router is mounted)
+// ============================================================
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Admin router is working!' });
 });
