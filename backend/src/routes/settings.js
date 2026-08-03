@@ -91,7 +91,14 @@ router.get('/news', async (req, res, next) => {
     const [rows] = await pool.query(
       `SELECT id, title, slug, content, image_url, is_featured, published_at FROM news_articles WHERE is_published = 1 ORDER BY published_at DESC`
     );
-    res.json({ success: true, data: rows });
+    
+    // ✅ Parse content back from JSON
+    const parsedRows = rows.map(row => ({
+      ...row,
+      content: row.content ? JSON.parse(row.content) : row.content
+    }));
+    
+    res.json({ success: true, data: parsedRows });
   } catch (error) {
     next(error);
   }
@@ -101,17 +108,24 @@ router.get('/news', async (req, res, next) => {
 // GET: Single news article (public)
 // ============================================================
 router.get('/news/:slug', async (req, res, next) => {
+  router.get('/news/:slug', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
       `SELECT * FROM news_articles WHERE slug = ? AND is_published = 1`,
       [req.params.slug]
     );
     if (!rows.length) return res.status(404).json({ success: false, message: 'Article not found' });
-    res.json({ success: true, data: rows[0] });
+    
+    // ✅ Parse content
+    const article = rows[0];
+    article.content = article.content ? JSON.parse(article.content) : article.content;
+    
+    res.json({ success: true, data: article });
   } catch (error) {
     next(error);
   }
 });
+
 
 
 router.post('/news', authAdmin, upload.single('image'), async (req, res, next) => {
@@ -123,7 +137,6 @@ router.post('/news', authAdmin, upload.single('image'), async (req, res, next) =
       image_url = req.file.path;
     }
     
-    // ✅ TRIM and VALIDATE
     title = title?.trim();
     slug = slug?.trim();
     content = content?.trim();
@@ -132,24 +145,24 @@ router.post('/news', authAdmin, upload.single('image'), async (req, res, next) =
       return res.status(400).json({ success: false, message: 'Title, slug, content required' });
     }
     
-    // ✅ LOG for debugging
+    // ✅ Store content as JSON string
+    const contentJson = JSON.stringify(content);
+    
     console.log('📝 Creating article:', { 
       title: title.substring(0, 50), 
       slug, 
-      contentLength: content.length 
+      contentLength: contentJson.length 
     });
     
-    // ✅ Store content as-is (parameterized query will escape it)
     const [result] = await pool.query(
       `INSERT INTO news_articles (title, slug, content, image_url, is_featured, is_published, published_at)
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [title, slug, content, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
+      [title, slug, contentJson, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
     );
     
     res.json({ success: true, data: { id: result.insertId } });
   } catch (error) {
     console.error('❌ News creation error:', error);
-    // Send detailed error
     res.status(500).json({ 
       success: false, 
       message: error.message,
@@ -168,20 +181,18 @@ router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next
       image_url = req.file.path;
     }
     
-    console.log('📝 Updating article:', { 
-      id: req.params.id,
-      title, 
-      slug, 
-      contentLength: content?.length,
-      hasFile: !!req.file 
-    });
+    title = title?.trim();
+    slug = slug?.trim();
+    content = content?.trim();
     
     if (!title || !slug || !content) {
       return res.status(400).json({ success: false, message: 'Title, slug, content required' });
     }
     
+    const contentJson = JSON.stringify(content);
+    
     let query = `UPDATE news_articles SET title = ?, slug = ?, content = ?, is_featured = ?, is_published = ?, updated_at = NOW()`;
-    const params = [title.trim(), slug.trim(), content, is_featured || 0, is_published !== undefined ? is_published : 1];
+    const params = [title, slug, contentJson, is_featured || 0, is_published !== undefined ? is_published : 1];
     
     if (image_url) {
       query += `, image_url = ?`;
@@ -198,6 +209,7 @@ router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next
     next(error);
   }
 });
+
 
 router.delete('/news/:id', authAdmin, async (req, res, next) => {
   try {
