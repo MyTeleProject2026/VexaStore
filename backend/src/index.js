@@ -26,7 +26,7 @@ if (!fs.existsSync(uploadDir)) {
   console.log('✅ Uploads directory created');
 }
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1);  // Render uses 1 proxy layer
 
 // ============================================================
 // Middleware
