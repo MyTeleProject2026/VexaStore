@@ -8,7 +8,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure storage
+// Configure storage for app files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -20,23 +20,11 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter
+// File filter for app files
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    'image/jpeg', 'image/png', 'image/webp', 
-    'application/octet-stream', 
-    'application/vnd.android.package-archive',
-    'application/x-ms-installer',
-    'application/x-apple-diskimage',
-    'application/x-debian-package',
-    'application/x-rpm'
-  ];
-  
-  const allowedExtensions = ['.apk', '.ipa', '.dmg', '.exe', '.deb', '.rpm', '.png', '.jpg', '.jpeg', '.webp'];
-  
+  const allowedExtensions = ['.apk', '.ipa', '.dmg', '.exe', '.msi', '.deb', '.rpm', '.zip'];
   const ext = path.extname(file.originalname).toLowerCase();
-  
-  if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+  if (allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error('File type not allowed'), false);
