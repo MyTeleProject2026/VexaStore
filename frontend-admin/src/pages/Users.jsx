@@ -15,7 +15,8 @@ export default function Users() {
   async function loadUsers() {
     try {
       setLoading(true);
-      const res = await api.get('/admin/settings/users');
+      // ✅ UPDATED: Use getUsers()
+      const res = await api.getUsers();
       setUsers(res.data?.data || []);
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -26,7 +27,8 @@ export default function Users() {
 
   async function toggleStatus(id, currentStatus) {
     try {
-      await api.put(`/admin/settings/users/${id}`, { is_active: currentStatus ? 0 : 1 });
+      // ✅ UPDATED: Use updateUser()
+      await api.updateUser(id, { is_active: currentStatus ? 0 : 1 });
       showSuccess('User status updated');
       loadUsers();
     } catch (err) {
@@ -37,7 +39,8 @@ export default function Users() {
   async function deleteUser(id) {
     if (!confirm('Delete this user?')) return;
     try {
-      await api.delete(`/admin/settings/users/${id}`);
+      // ✅ UPDATED: Use deleteUser()
+      await api.deleteUser(id);
       showSuccess('User deleted');
       loadUsers();
     } catch (err) {
