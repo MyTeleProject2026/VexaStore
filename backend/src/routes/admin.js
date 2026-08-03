@@ -8,10 +8,10 @@ const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
-const JWT_SECRET = process.env.JWT_SECRET || '601a209a777e4a2ffadb930cd6ec17dca3ddfac2932394e47dc73ecbdfbf7842';
+const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
 // ============================================================
-// POST: Admin Login (using environment variables)
+// POST: Admin Login
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -21,25 +21,29 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
     
-    // Check against environment variables
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@vexastore.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const [rows] = await pool.query(
+      'SELECT * FROM admins WHERE email = ? AND is_active = 1',
+      [email.trim().toLowerCase()]
+    );
     
-    if (email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
+    if (!rows.length) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    if (password !== adminPassword) {
+    const admin = rows[0];
+    const valid = await bcrypt.compare(password, admin.password);
+    
+    if (!valid) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    // Generate JWT token
+    await pool.query(
+      'UPDATE admins SET last_login = NOW() WHERE id = ?',
+      [admin.id]
+    );
+    
     const token = jwt.sign(
-      { 
-        id: 1, 
-        email: adminEmail, 
-        role: 'super_admin' 
-      },
+      { id: admin.id, email: admin.email, role: admin.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -48,10 +52,10 @@ router.post('/login', async (req, res, next) => {
       success: true,
       token,
       admin: {
-        id: 1,
-        email: adminEmail,
-        name: 'VexaStore Admin',
-        role: 'super_admin'
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role
       }
     });
   } catch (error) {
@@ -135,12 +139,14 @@ router.post('/apps', authAdmin, upload.single('icon'), async (req, res, next) =>
       developer, website, is_featured
     } = req.body;
     
+    // ✅ Validate required fields
     if (!name || !slug || !category_id) {
       return res.status(400).json({ success: false, message: 'Name, slug, and category are required' });
     }
     
     const icon_url = req.file ? `/uploads/apps/${req.file.filename}` : null;
     
+    // Check if slug exists
     const [existing] = await pool.query('SELECT id FROM apps WHERE slug = ?', [slug]);
     if (existing.length) {
       return res.status(400).json({ success: false, message: 'Slug already exists' });
@@ -214,6 +220,7 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
+    // Get icon to delete
     const [rows] = await pool.query('SELECT icon_url FROM apps WHERE id = ?', [id]);
     if (rows.length && rows[0].icon_url) {
       const filePath = path.join(__dirname, '../../', rows[0].icon_url);
@@ -222,6 +229,7 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
       }
     }
     
+    // Delete versions and logs
     await pool.query('DELETE FROM download_logs WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_versions WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_reviews WHERE app_id = ?', [id]);
@@ -259,6 +267,7 @@ router.post('/versions', authAdmin, upload.single('file'), async (req, res, next
       return res.status(404).json({ success: false, message: 'App not found' });
     }
     
+    // If this is latest, update other versions for this OS
     if (is_latest === '1' || is_latest === 1) {
       await pool.query(
         'UPDATE app_versions SET is_latest = 0 WHERE app_id = ? AND os = ?',
@@ -290,6 +299,7 @@ router.delete('/versions/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
+    // Get file to delete
     const [rows] = await pool.query('SELECT file_url FROM app_versions WHERE id = ?', [id]);
     if (rows.length && rows[0].file_url) {
       const filePath = path.join(__dirname, '../../', rows[0].file_url);
