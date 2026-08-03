@@ -6,13 +6,13 @@ const path = require('path');
 const fs = require('fs');
 const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
-// ✅ Import from cloudinary.js (NOT upload.js)
+// ✅ Import from cloudinary.js
 const { imageUpload, appFileUpload } = require('../config/cloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
 // ============================================================
-// POST: Admin Login
+// POST: Admin Login - ✅ Using Environment Variables
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -22,29 +22,25 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
     
-    const [rows] = await pool.query(
-      'SELECT * FROM admins WHERE email = ? AND is_active = 1',
-      [email.trim().toLowerCase()]
-    );
+    // ✅ Check against environment variables
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@vexastore.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
     
-    if (!rows.length) {
+    if (email.trim().toLowerCase() !== adminEmail.toLowerCase()) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    const admin = rows[0];
-    const valid = await bcrypt.compare(password, admin.password);
-    
-    if (!valid) {
+    if (password !== adminPassword) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
-    await pool.query(
-      'UPDATE admins SET last_login = NOW() WHERE id = ?',
-      [admin.id]
-    );
-    
+    // ✅ Generate JWT token
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: admin.role },
+      { 
+        id: 1, 
+        email: adminEmail, 
+        role: 'super_admin' 
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -53,10 +49,10 @@ router.post('/login', async (req, res, next) => {
       success: true,
       token,
       admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role
+        id: 1,
+        email: adminEmail,
+        name: 'VexaStore Admin',
+        role: 'super_admin'
       }
     });
   } catch (error) {
@@ -144,7 +140,6 @@ router.post('/apps', authAdmin, imageUpload.single('icon'), async (req, res, nex
       return res.status(400).json({ success: false, message: 'Name, slug, and category are required' });
     }
     
-    // ✅ Cloudinary returns the URL
     const icon_url = req.file ? req.file.path : null;
     
     const [existing] = await pool.query('SELECT id FROM apps WHERE slug = ?', [slug]);
@@ -246,7 +241,6 @@ router.post('/versions', authAdmin, appFileUpload.single('file'), async (req, re
       return res.status(400).json({ success: false, message: 'app_id, version, os, and file are required' });
     }
     
-    // ✅ Cloudinary returns the file URL
     const file_url = req.file.path;
     const file_size = req.file.size;
     const fileSizeFormatted = file_size > 1024 * 1024 
