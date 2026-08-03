@@ -1,33 +1,36 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 import AppCard from '../components/AppCard';
-import { Search, X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export default function SearchPage() {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
+export default function CategoryPage() {
+  const { slug } = useParams();
   const [apps, setApps] = useState([]);
+  const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const { showError } = useNotification();
 
   useEffect(() => {
-    if (query) {
-      searchApps();
-    } else {
-      setApps([]);
-      setLoading(false);
-    }
-  }, [query]);
+    loadCategory();
+  }, [slug]);
 
-  async function searchApps() {
+  async function loadCategory() {
     try {
       setLoading(true);
-      const res = await appApi.getApps({ search: query });
+      const res = await appApi.getApps({ category: slug });
       setApps(res.data?.data || []);
+      if (res.data?.data?.length > 0) {
+        setCategory({ name: res.data.data[0].category_name, slug });
+      } else {
+        const catRes = await appApi.getCategories();
+        const found = catRes.data?.data?.find(c => c.slug === slug);
+        if (found) setCategory(found);
+      }
     } catch (err) {
-      showError('Search failed');
+      showError('Failed to load category');
     } finally {
       setLoading(false);
     }
@@ -39,20 +42,18 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Search size={24} className="text-accent-primary" />
-        <h1 className="text-2xl font-bold text-white">Search Results</h1>
-      </div>
-      {query && <p className="text-text-secondary">Showing results for: <span className="text-white font-medium">"{query}"</span></p>}
+      <Link to="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition">
+        <ChevronLeft size={20} /> Back to Home
+      </Link>
+      <h1 className="text-2xl font-bold text-white">{category?.name || slug} Apps</h1>
+      <p className="text-text-secondary">Discover the best {category?.name || slug} apps from the VexaTrade ecosystem.</p>
       {apps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
           {apps.map((app) => <AppCard key={app.id} app={app} />)}
         </div>
       ) : (
         <div className="glass-card p-8 text-center text-text-secondary">
-          <Search size={48} className="mx-auto text-text-secondary/30 mb-4" />
-          <p>No apps found for "{query}"</p>
-          <Link to="/" className="text-accent-primary hover:underline mt-2 inline-block">Go Home</Link>
+          No apps found in this category yet.
         </div>
       )}
     </div>
