@@ -4,9 +4,9 @@ const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
 const { upload } = require('../config/cloudinary');
 
-const settingsRoutes = require('./routes/settings');
-app.use('/api/admin/settings', settingsRoutes);
-
+// ============================================================
+// GET: Public site settings (no auth)
+// ============================================================
 router.get('/public', async (req, res, next) => {
   try {
     const [rows] = await pool.query('SELECT * FROM site_settings WHERE id = 1');
