@@ -91,13 +91,11 @@ router.get('/news', async (req, res, next) => {
     const [rows] = await pool.query(
       `SELECT id, title, slug, content, image_url, is_featured, published_at FROM news_articles WHERE is_published = 1 ORDER BY published_at DESC`
     );
-    
-    // ✅ Parse content back from JSON
+    // Parse content from JSON (if stored as JSON)
     const parsedRows = rows.map(row => ({
       ...row,
       content: row.content ? JSON.parse(row.content) : row.content
     }));
-    
     res.json({ success: true, data: parsedRows });
   } catch (error) {
     next(error);
@@ -108,26 +106,23 @@ router.get('/news', async (req, res, next) => {
 // GET: Single news article (public)
 // ============================================================
 router.get('/news/:slug', async (req, res, next) => {
-  router.get('/news/:slug', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
       `SELECT * FROM news_articles WHERE slug = ? AND is_published = 1`,
       [req.params.slug]
     );
     if (!rows.length) return res.status(404).json({ success: false, message: 'Article not found' });
-    
-    // ✅ Parse content
     const article = rows[0];
     article.content = article.content ? JSON.parse(article.content) : article.content;
-    
     res.json({ success: true, data: article });
   } catch (error) {
     next(error);
   }
 });
 
-
-
+// ============================================================
+// ADMIN: News CRUD (with JSON.stringify for content)
+// ============================================================
 router.post('/news', authAdmin, upload.single('image'), async (req, res, next) => {
   try {
     let { title, slug, content, is_featured, is_published } = req.body;
@@ -145,7 +140,6 @@ router.post('/news', authAdmin, upload.single('image'), async (req, res, next) =
       return res.status(400).json({ success: false, message: 'Title, slug, content required' });
     }
     
-    // ✅ Store content as JSON string
     const contentJson = JSON.stringify(content);
     
     console.log('📝 Creating article:', { 
@@ -171,7 +165,9 @@ router.post('/news', authAdmin, upload.single('image'), async (req, res, next) =
   }
 });
 
-
+// ============================================================
+// ADMIN: Update news article
+// ============================================================
 router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next) => {
   try {
     let { title, slug, content, is_featured, is_published } = req.body;
@@ -210,7 +206,9 @@ router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next
   }
 });
 
-
+// ============================================================
+// ADMIN: Delete news article
+// ============================================================
 router.delete('/news/:id', authAdmin, async (req, res, next) => {
   try {
     await pool.query('DELETE FROM news_articles WHERE id = ?', [req.params.id]);
@@ -256,8 +254,6 @@ router.delete('/users/:id', authAdmin, async (req, res, next) => {
 // ============================================================
 // ADMIN: Categories CRUD
 // ============================================================
-
-// Get all categories (admin)
 router.get('/categories', authAdmin, async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -269,7 +265,6 @@ router.get('/categories', authAdmin, async (req, res, next) => {
   }
 });
 
-// Create category (admin only)
 router.post('/categories', authAdmin, async (req, res, next) => {
   try {
     const { name, slug, icon, sort_order } = req.body;
@@ -286,7 +281,6 @@ router.post('/categories', authAdmin, async (req, res, next) => {
   }
 });
 
-// Update category (admin only)
 router.put('/categories/:id', authAdmin, async (req, res, next) => {
   try {
     const { name, slug, icon, sort_order, is_active } = req.body;
@@ -303,7 +297,6 @@ router.put('/categories/:id', authAdmin, async (req, res, next) => {
   }
 });
 
-// Delete category (admin only)
 router.delete('/categories/:id', authAdmin, async (req, res, next) => {
   try {
     const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
