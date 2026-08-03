@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
-// ✅ Import from cloudinary.js (NOT upload.js)
-const { imageUpload, appFileUpload } = require('../config/cloudinary');
+const { imageUpload } = require('../config/cloudinary');
 
 // ============================================================
 // GET: Public site settings (no auth)
@@ -34,7 +33,10 @@ router.get('/', authAdmin, async (req, res, next) => {
 // ============================================================
 router.put('/', authAdmin, async (req, res, next) => {
   try {
-    const { site_title, site_subtitle, primary_color, secondary_color, background_color, font_family, custom_css, custom_header_html, custom_footer_html } = req.body;
+    const {
+      site_title, site_subtitle, primary_color, secondary_color,
+      background_color, font_family, custom_css, custom_header_html, custom_footer_html
+    } = req.body;
     await pool.query(
       `UPDATE site_settings SET
         site_title = COALESCE(?, site_title),
@@ -57,257 +59,10 @@ router.put('/', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Upload logo (admin only) - ✅ Uses imageUpload
+// POST: Upload logo (admin only)
 // ============================================================
 router.post('/upload-logo', authAdmin, imageUpload.single('logo'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const logo_url = req.file.path;
-    await pool.query('UPDATE site_settings SET logo_url = ? WHERE id = 1', [logo_url]);
-    res.json({ success: true, logo_url });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// POST: Upload favicon (admin only) - ✅ Uses imageUpload
-// ============================================================
-router.post('/upload-favicon', authAdmin, imageUpload.single('favicon'), async (req, res, next) => {
-  try {
-    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-    const favicon_url = req.file.path;
-    await pool.query('UPDATE site_settings SET favicon_url = ? WHERE id = 1', [favicon_url]);
-    res.json({ success: true, favicon_url });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// GET: News articles (public)
-// ============================================================
-router.get('/news', async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT id, title, slug, content, image_url, is_featured, published_at FROM news_articles WHERE is_published = 1 ORDER BY published_at DESC`
-    );
-    // Parse content from JSON (if stored as JSON)
-    const parsedRows = rows.map(row => ({
-      ...row,
-      content: row.content ? JSON.parse(row.content) : row.content
-    }));
-    res.json({ success: true, data: parsedRows });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// GET: Single news article (public)
-// ============================================================
-router.get('/news/:slug', async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT * FROM news_articles WHERE slug = ? AND is_published = 1`,
-      [req.params.slug]
-    );
-    if (!rows.length) return res.status(404).json({ success: false, message: 'Article not found' });
-    const article = rows[0];
-    article.content = article.content ? JSON.parse(article.content) : article.content;
-    res.json({ success: true, data: article });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// ADMIN: News CRUD
-// ============================================================
-router.post('/news', authAdmin, imageUpload.single('image'), async (req, res, next) => {
-  try {
-    let { title, slug, content, is_featured, is_published } = req.body;
-    let image_url = null;
-    
-    if (req.file) {
-      image_url = req.file.path;
-    }
-    
-    title = title?.trim();
-    slug = slug?.trim();
-    content = content?.trim();
-    
-    if (!title || !slug || !content) {
-      return res.status(400).json({ success: false, message: 'Title, slug, content required' });
-    }
-    
-    const contentJson = JSON.stringify(content);
-    
-    console.log('📝 Creating article:', { 
-      title: title.substring(0, 50), 
-      slug, 
-      contentLength: contentJson.length 
-    });
-    
-    const [result] = await pool.query(
-      `INSERT INTO news_articles (title, slug, content, image_url, is_featured, is_published, published_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [title, slug, contentJson, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
-    );
-    
-    res.json({ success: true, data: { id: result.insertId } });
-  } catch (error) {
-    console.error('❌ News creation error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message,
-      sql: error.sql 
-    });
-  }
-});
-
-// ============================================================
-// ADMIN: Update news article
-// ============================================================
-router.put('/news/:id', authAdmin, imageUpload.single('image'), async (req, res, next) => {
-  try {
-    let { title, slug, content, is_featured, is_published } = req.body;
-    let image_url = null;
-    
-    if (req.file) {
-      image_url = req.file.path;
-    }
-    
-    title = title?.trim();
-    slug = slug?.trim();
-    content = content?.trim();
-    
-    if (!title || !slug || !content) {
-      return res.status(400).json({ success: false, message: 'Title, slug, content required' });
-    }
-    
-    const contentJson = JSON.stringify(content);
-    
-    let query = `UPDATE news_articles SET title = ?, slug = ?, content = ?, is_featured = ?, is_published = ?, updated_at = NOW()`;
-    const params = [title, slug, contentJson, is_featured || 0, is_published !== undefined ? is_published : 1];
-    
-    if (image_url) {
-      query += `, image_url = ?`;
-      params.push(image_url);
-    }
-    
-    query += ` WHERE id = ?`;
-    params.push(req.params.id);
-    
-    await pool.query(query, params);
-    res.json({ success: true, message: 'Article updated' });
-  } catch (error) {
-    console.error('❌ News update error:', error);
-    next(error);
-  }
-});
-
-// ============================================================
-// ADMIN: Delete news article
-// ============================================================
-router.delete('/news/:id', authAdmin, async (req, res, next) => {
-  try {
-    await pool.query('DELETE FROM news_articles WHERE id = ?', [req.params.id]);
-    res.json({ success: true, message: 'Article deleted' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// ADMIN: User Management
-// ============================================================
-router.get('/users', authAdmin, async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT id, email, name, google_id, is_verified, is_active, created_at FROM store_users ORDER BY created_at DESC`
-    );
-    res.json({ success: true, data: rows });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put('/users/:id', authAdmin, async (req, res, next) => {
-  try {
-    const { is_active } = req.body;
-    await pool.query('UPDATE store_users SET is_active = ? WHERE id = ?', [is_active, req.params.id]);
-    res.json({ success: true, message: 'User updated' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete('/users/:id', authAdmin, async (req, res, next) => {
-  try {
-    await pool.query('DELETE FROM store_users WHERE id = ?', [req.params.id]);
-    res.json({ success: true, message: 'User deleted' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// ADMIN: Categories CRUD
-// ============================================================
-router.get('/categories', authAdmin, async (req, res, next) => {
-  try {
-    const [rows] = await pool.query(
-      `SELECT * FROM categories ORDER BY sort_order ASC, name ASC`
-    );
-    res.json({ success: true, data: rows });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/categories', authAdmin, async (req, res, next) => {
-  try {
-    const { name, slug, icon, sort_order } = req.body;
-    if (!name || !slug) {
-      return res.status(400).json({ success: false, message: 'Name and slug required' });
-    }
-    const [result] = await pool.query(
-      `INSERT INTO categories (name, slug, icon, sort_order, is_active) VALUES (?, ?, ?, ?, 1)`,
-      [name, slug, icon || null, sort_order || 0]
-    );
-    res.json({ success: true, data: { id: result.insertId } });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put('/categories/:id', authAdmin, async (req, res, next) => {
-  try {
-    const { name, slug, icon, sort_order, is_active } = req.body;
-    const [result] = await pool.query(
-      `UPDATE categories SET name = ?, slug = ?, icon = ?, sort_order = ?, is_active = ? WHERE id = ?`,
-      [name, slug, icon || null, sort_order || 0, is_active !== undefined ? is_active : 1, req.params.id]
-    );
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
-    }
-    res.json({ success: true, message: 'Category updated' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete('/categories/:id', authAdmin, async (req, res, next) => {
-  try {
-    const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
-    }
-    res.json({ success: true, message: 'Category deleted' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-module.exports = router;
+    await pool.query('UPDATE site_settings SET logo_url = ? WHERE id
