@@ -1,11 +1,30 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Download, Smartphone, Apple, Monitor, Terminal, Home } from 'lucide-react';
-import { useState } from 'react';
+import { 
+  Search, Menu, X, Download, Smartphone, Apple, Monitor, Terminal, 
+  Home, User, LogIn, UserPlus, Settings, Heart, Clock, Zap
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Layout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('vexastore_user_token');
+    const userData = localStorage.getItem('vexastore_user');
+    if (token && userData) {
+      setIsLoggedIn(true);
+      try {
+        setUser(JSON.parse(userData));
+      } catch (e) {
+        console.error('Failed to parse user data');
+      }
+    }
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -15,91 +34,215 @@ export default function Layout() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('vexastore_user_token');
+    localStorage.removeItem('vexastore_user');
+    setIsLoggedIn(false);
+    setUser(null);
+    navigate('/');
+  };
+
   const categories = [
-    { slug: 'ios', label: 'iOS', icon: Apple },
-    { slug: 'android', label: 'Android', icon: Smartphone },
-    { slug: 'windows', label: 'Windows', icon: Monitor },
-    { slug: 'macos', label: 'macOS', icon: Apple },
-    { slug: 'linux', label: 'Linux', icon: Terminal },
+    { slug: 'ios', label: 'iOS', icon: Apple, color: 'text-blue-400' },
+    { slug: 'android', label: 'Android', icon: Smartphone, color: 'text-green-400' },
+    { slug: 'windows', label: 'Windows', icon: Monitor, color: 'text-cyan-400' },
+    { slug: 'macos', label: 'macOS', icon: Apple, color: 'text-purple-400' },
+    { slug: 'linux', label: 'Linux', icon: Terminal, color: 'text-amber-400' },
   ];
 
   return (
     <div className="min-h-screen bg-dark-bg text-white">
-      <header className="sticky top-0 z-40 bg-dark-card/90 backdrop-blur-sm border-b border-dark-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      {/* Top Bar - Mobile First */}
+      <header className="sticky top-0 z-40 bg-dark-card/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
+        <div className="px-4 py-2 flex items-center justify-between gap-2">
+          {/* Logo */}
+          <NavLink to="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center border border-cyan-500/20">
+              <Download size={18} className="text-cyan-400" />
+            </div>
+            <div>
+              <span className="text-lg font-bold gradient-text">VexaStore</span>
+            </div>
+          </NavLink>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-1">
+            {/* Search Button */}
+            <button
+              onClick={() => navigate('/search')}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
+            >
+              <Search size={20} />
+            </button>
+
+            {/* Account Button */}
+            {isLoggedIn ? (
+              <div className="relative group">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition"
+                >
+                  <User size={20} />
+                </button>
+              </div>
+            ) : (
+              <NavLink
+                to="/login"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
+              >
+                <LogIn size={20} />
+              </NavLink>
+            )}
+
+            {/* Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden text-text-secondary hover:text-white transition"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <NavLink to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent-primary/20 flex items-center justify-center">
-                <Download size={18} className="text-accent-primary" />
-              </div>
-              <span className="text-xl font-bold gradient-text">VexaStore</span>
-            </NavLink>
           </div>
-
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search apps..."
-                className="w-full rounded-xl bg-dark-bg border border-dark-border px-4 py-2.5 pl-10 text-sm text-white placeholder-text-secondary focus:border-accent-primary outline-none transition"
-              />
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-            </div>
-          </form>
-
-          <NavLink to="/search" className="md:hidden text-text-secondary hover:text-white transition">
-            <Search size={22} />
-          </NavLink>
         </div>
 
-        <div className="md:hidden px-4 pb-3">
+        {/* Quick Search Bar (Mobile) */}
+        <div className="px-4 pb-3 md:hidden">
           <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search apps..."
-              className="w-full rounded-xl bg-dark-bg border border-dark-border px-4 py-2.5 pl-10 text-sm text-white placeholder-text-secondary focus:border-accent-primary outline-none transition"
+              placeholder="Search apps, games, and more..."
+              className="w-full rounded-2xl bg-dark-bg/80 border border-white/10 px-4 py-2.5 pl-10 text-sm text-white placeholder-slate-500 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
             />
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           </form>
+        </div>
+
+        {/* Category Quick Tabs (Mobile) */}
+        <div className="px-4 pb-2 overflow-x-auto scrollbar-hide flex gap-2 md:hidden">
+          {categories.map((cat) => (
+            <NavLink
+              key={cat.slug}
+              to={`/category/${cat.slug}`}
+              className={({ isActive }) => `
+                flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition
+                ${isActive 
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/20' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }
+              `}
+            >
+              <cat.icon size={14} className={cat.color} />
+              {cat.label}
+            </NavLink>
+          ))}
         </div>
       </header>
 
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 bg-dark-bg/90 backdrop-blur-sm lg:hidden" onClick={() => setMobileMenuOpen(false)}>
-          <div className="w-72 bg-dark-card h-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-6">
-              <Download size={24} className="text-accent-primary" />
-              <span className="text-xl font-bold gradient-text">VexaStore</span>
+        <div className="fixed inset-0 z-30 bg-dark-bg/90 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
+          <div className="w-80 bg-dark-card h-full p-6 shadow-2xl border-r border-white/5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* User Profile Section */}
+            <div className="mb-6 pb-4 border-b border-white/5">
+              {isLoggedIn && user ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border border-cyan-500/20">
+                    <span className="text-lg font-bold text-cyan-400">
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white truncate">{user.name}</p>
+                    <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-400">Sign in to access your downloads and favorites</p>
+                  <div className="flex gap-2">
+                    <NavLink to="/login" className="flex-1 btn-primary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
+                      Sign In
+                    </NavLink>
+                    <NavLink to="/register" className="flex-1 btn-secondary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
+                      Register
+                    </NavLink>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Navigation Links */}
             <nav className="space-y-1">
-              <NavLink to="/" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-secondary hover:bg-dark-bg/50'}`} onClick={() => setMobileMenuOpen(false)}>
+              <NavLink to="/" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Home size={20} /> Home
               </NavLink>
+
               {categories.map((cat) => (
-                <NavLink key={cat.slug} to={`/category/${cat.slug}`} className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-secondary hover:bg-dark-bg/50'}`} onClick={() => setMobileMenuOpen(false)}>
-                  <cat.icon size={20} /> {cat.label}
+                <NavLink key={cat.slug} to={`/category/${cat.slug}`} className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
+                  <cat.icon size={20} className={cat.color} /> {cat.label}
                 </NavLink>
               ))}
+
+              <div className="border-t border-white/5 my-2 pt-2">
+                {isLoggedIn && (
+                  <>
+                    <NavLink to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                      <Settings size={20} /> Profile Settings
+                    </NavLink>
+                    <NavLink to="/downloads" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                      <Download size={20} /> My Downloads
+                    </NavLink>
+                    <NavLink to="/favorites" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                      <Heart size={20} /> Favorites
+                    </NavLink>
+                    <button
+                      onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-left"
+                    >
+                      <LogIn size={20} /> Logout
+                    </button>
+                  </>
+                )}
+              </div>
             </nav>
+
+            <div className="absolute bottom-6 left-6 right-6 border-t border-white/5 pt-4">
+              <p className="text-[10px] text-slate-600 text-center">VexaTrade Blockchain Ecosystem</p>
+            </div>
           </div>
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-4">
         <Outlet />
       </main>
 
-      <footer className="border-t border-dark-border bg-dark-card/50 mt-8">
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-dark-card/95 backdrop-blur-xl border-t border-white/5 md:hidden">
+        <div className="flex items-center justify-around py-2">
+          <NavLink to="/" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Home size={22} />
+            <span className="text-[10px] font-medium">Home</span>
+          </NavLink>
+          <NavLink to="/search" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Search size={22} />
+            <span className="text-[10px] font-medium">Search</span>
+          </NavLink>
+          <NavLink to="/downloads" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Download size={22} />
+            <span className="text-[10px] font-medium">Downloads</span>
+          </NavLink>
+          <NavLink to={isLoggedIn ? "/profile" : "/login"} className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <User size={22} />
+            <span className="text-[10px] font-medium">{isLoggedIn ? 'Profile' : 'Login'}</span>
+          </NavLink>
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <footer className="border-t border-white/5 bg-dark-card/50 mt-8 pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-text-secondary">
           <div className="flex items-center gap-2">
             <Download size={16} className="text-accent-primary" />
