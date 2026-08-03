@@ -161,10 +161,10 @@ export default function Versions() {
                 required
               >
                 <option value="android">Android (APK)</option>
-                <option value="ios">iOS</option>
-                <option value="windows">Windows</option>
-                <option value="macos">macOS</option>
-                <option value="linux">Linux</option>
+                <option value="ios">iOS (IPA)</option>
+                <option value="windows">Windows (EXE/MSI)</option>
+                <option value="macos">macOS (DMG)</option>
+                <option value="linux">Linux (DEB/RPM)</option>
               </select>
             </div>
           </div>
@@ -178,13 +178,14 @@ export default function Versions() {
             />
           </div>
           <div>
-            <label className="input-label">App File *</label>
+            <label className="input-label">App File (APK/IPA/EXE/DMG) *</label>
             <input
               type="file"
               onChange={handleFileChange}
               className="w-full text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-accent-primary/10 file:text-accent-primary hover:file:bg-accent-primary/20 transition"
               required
             />
+            <p className="text-xs text-text-secondary mt-1">Supported formats: APK, IPA, EXE, MSI, DMG, DEB, RPM, ZIP</p>
           </div>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-text-secondary">
@@ -213,6 +214,8 @@ export default function Versions() {
         <div className="space-y-3">
           {versions.map((v) => {
             const Icon = OS_ICONS[v.os] || Smartphone;
+            // ✅ File URL from Cloudinary
+            const fileUrl = v.file_url;
             return (
               <div key={v.id} className="glass-card p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-4">
@@ -234,7 +237,7 @@ export default function Versions() {
                 </div>
                 <div className="flex items-center gap-2">
                   <a 
-                    href={`${import.meta.env.VITE_API_BASE_URL}${v.file_url}`} 
+                    href={fileUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="p-2 rounded-lg hover:bg-dark-bg/50 text-text-secondary hover:text-white transition"
