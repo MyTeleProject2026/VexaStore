@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { imageUpload, appFileUpload } = require('../config/cloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
@@ -130,21 +130,21 @@ router.get('/apps/:id', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Create app (admin only)
+// POST: Create app (admin only) - ✅ Uses imageUpload for icon
 // ============================================================
-router.post('/apps', authAdmin, upload.single('icon'), async (req, res, next) => {
+router.post('/apps', authAdmin, imageUpload.single('icon'), async (req, res, next) => {
   try {
     const { 
       name, slug, description, long_description, category_id,
       developer, website, is_featured
     } = req.body;
     
-    // ✅ Validate required fields
     if (!name || !slug || !category_id) {
       return res.status(400).json({ success: false, message: 'Name, slug, and category are required' });
     }
     
-    const icon_url = req.file ? `/uploads/apps/${req.file.filename}` : null;
+    // ✅ Cloudinary returns the URL
+    const icon_url = req.file ? req.file.path : null;
     
     // Check if slug exists
     const [existing] = await pool.query('SELECT id FROM apps WHERE slug = ?', [slug]);
@@ -170,9 +170,9 @@ router.post('/apps', authAdmin, upload.single('icon'), async (req, res, next) =>
 });
 
 // ============================================================
-// PUT: Update app (admin only)
+// PUT: Update app (admin only) - ✅ Uses imageUpload for icon
 // ============================================================
-router.put('/apps/:id', authAdmin, upload.single('icon'), async (req, res, next) => {
+router.put('/apps/:id', authAdmin, imageUpload.single('icon'), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, long_description, category_id, developer, website, is_featured, is_active } = req.body;
@@ -183,7 +183,7 @@ router.put('/apps/:id', authAdmin, upload.single('icon'), async (req, res, next)
     
     let icon_url = null;
     if (req.file) {
-      icon_url = `/uploads/apps/${req.file.filename}`;
+      icon_url = req.file.path;
     }
     
     let query = `
@@ -220,15 +220,6 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Get icon to delete
-    const [rows] = await pool.query('SELECT icon_url FROM apps WHERE id = ?', [id]);
-    if (rows.length && rows[0].icon_url) {
-      const filePath = path.join(__dirname, '../../', rows[0].icon_url);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
-    
     // Delete versions and logs
     await pool.query('DELETE FROM download_logs WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_versions WHERE app_id = ?', [id]);
@@ -246,9 +237,9 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Add version (admin only)
+// POST: Add version (admin only) - ✅ Uses appFileUpload for APK files
 // ============================================================
-router.post('/versions', authAdmin, upload.single('file'), async (req, res, next) => {
+router.post('/versions', authAdmin, appFileUpload.single('file'), async (req, res, next) => {
   try {
     const { app_id, version, os, release_notes, is_latest } = req.body;
     
@@ -256,7 +247,8 @@ router.post('/versions', authAdmin, upload.single('file'), async (req, res, next
       return res.status(400).json({ success: false, message: 'app_id, version, os, and file are required' });
     }
     
-    const file_url = `/uploads/apps/${req.file.filename}`;
+    // ✅ Cloudinary returns the file URL
+    const file_url = req.file.path;
     const file_size = req.file.size;
     const fileSizeFormatted = file_size > 1024 * 1024 
       ? `${(file_size / (1024 * 1024)).toFixed(1)} MB` 
@@ -298,16 +290,6 @@ router.post('/versions', authAdmin, upload.single('file'), async (req, res, next
 router.delete('/versions/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Get file to delete
-    const [rows] = await pool.query('SELECT file_url FROM app_versions WHERE id = ?', [id]);
-    if (rows.length && rows[0].file_url) {
-      const filePath = path.join(__dirname, '../../', rows[0].file_url);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
-    
     const [result] = await pool.query('DELETE FROM app_versions WHERE id = ?', [id]);
     
     if (result.affectedRows === 0) {
