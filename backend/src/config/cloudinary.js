@@ -8,6 +8,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Storage for images
 const imageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -17,6 +18,7 @@ const imageStorage = new CloudinaryStorage({
   },
 });
 
+// Storage for app files
 const appFileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
