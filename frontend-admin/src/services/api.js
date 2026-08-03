@@ -41,9 +41,6 @@ export const getApiErrorMessage = (err) => {
   return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
 };
 
-// ============================================================
-// ✅ FIXED: All methods inside the api object
-// ============================================================
 export const api = {
   // Auth
   adminLogin: (data) => adminApi.post('/api/admin/login', data),
@@ -92,17 +89,13 @@ export const api = {
   // Categories (public)
   getCategories: () => adminApi.get('/api/categories'),
 
-  // ============================================================
-  // ✅ Admin Settings Routes
-  // ============================================================
-  
-  // Categories (admin)
+  // Admin Settings Routes
   getAdminCategories: () => adminApi.get('/api/admin/settings/categories'),
   createCategory: (data) => adminApi.post('/api/admin/settings/categories', data),
   updateCategory: (id, data) => adminApi.put(`/api/admin/settings/categories/${id}`, data),
   deleteCategory: (id) => adminApi.delete(`/api/admin/settings/categories/${id}`),
 
-  // News - ✅ FIXED: Handles both FormData and JSON
+  // News - Handles both FormData and JSON
   getNews: () => adminApi.get('/api/admin/settings/news'),
   createNews: (data) => {
     if (data instanceof FormData) {
