@@ -31,7 +31,7 @@ export default function AddApp() {
       const res = await api.getCategories();
       setCategories(res.data?.data || []);
       if (res.data?.data?.length > 0) {
-        setForm(prev => ({ ...prev, category_id: res.data.data[0].id }));
+        setForm(prev => ({ ...prev, category_id: String(res.data.data[0].id) }));
       }
     } catch (err) {
       console.error('Failed to load categories:', err);
@@ -50,6 +50,8 @@ export default function AddApp() {
     if (name === 'name') {
       const slug = generateSlug(value);
       setForm(prev => ({ ...prev, [name]: value, slug }));
+    } else if (name === 'category_id') {
+      setForm(prev => ({ ...prev, category_id: value }));
     } else {
       setForm(prev => ({ 
         ...prev, 
@@ -75,27 +77,37 @@ export default function AddApp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ Validate required fields
     if (!form.name || !form.slug || !form.category_id) {
-      showError('Please fill in all required fields');
+      showError('Name, slug, and category are required');
       return;
     }
 
     try {
       setLoading(true);
       const data = new FormData();
-      Object.keys(form).forEach(key => {
-        if (key === 'icon' && form[key] instanceof File) {
-          data.append(key, form[key]);
-        } else if (key !== 'icon_preview' && form[key] !== undefined && form[key] !== null) {
-          data.append(key, form[key]);
-        }
-      });
+      
+      // ✅ Send all form data
+      data.append('name', form.name.trim());
+      data.append('slug', form.slug.trim());
+      data.append('category_id', Number(form.category_id));  // ✅ Convert to number
+      data.append('description', form.description || '');
+      data.append('long_description', form.long_description || '');
+      data.append('developer', form.developer || 'VexaTrade');
+      data.append('website', form.website || '');
+      data.append('is_featured', form.is_featured);
+      
+      if (form.icon instanceof File) {
+        data.append('icon', form.icon);
+      }
 
       await api.createApp(data);
       showSuccess('App created successfully!');
       navigate('/apps');
     } catch (err) {
-      showError(getApiErrorMessage(err));
+      console.error('Create app error:', err);
+      showError(getApiErrorMessage(err) || 'Failed to create app');
     } finally {
       setLoading(false);
     }
