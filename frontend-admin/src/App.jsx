@@ -11,6 +11,12 @@ import EditApp from './pages/EditApp';
 import Versions from './pages/Versions';
 import Analytics from './pages/Analytics';
 import Maintenance from './pages/Maintenance';
+// Add these imports
+import Categories from './pages/Categories';
+import Users from './pages/Users';
+import News from './pages/News';
+import Settings from './pages/Settings';
+
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,6 +68,11 @@ function AppContent() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/maintenance" element={<Maintenance />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+          // Add these routes inside <Routes>
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
     </BrowserRouter>
