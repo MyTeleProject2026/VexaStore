@@ -14,20 +14,17 @@ const categoryRoutes = require('./routes/categories');
 const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
 // ============================================================
-// ADD: User Authentication Routes
+// ✅ ADD: Auth Routes
 // ============================================================
 const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-
-// ============================================================
-// ADD: Admin Settings Routes
-// ============================================================
-const settingsRoutes = require('./routes/settings');
-app.use('/api/admin/settings', settingsRoutes);
-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// ============================================================
+// ✅ Fix for Render's reverse proxy - Use '1' instead of 'true'
+// ============================================================
+app.set('trust proxy', 1);
 
 // ============================================================
 // Ensure uploads directory exists
@@ -37,8 +34,6 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
   console.log('✅ Uploads directory created');
 }
-
-app.set('trust proxy', 1);  // Render uses 1 proxy layer
 
 // ============================================================
 // Middleware
@@ -82,13 +77,17 @@ app.use('/api/', limiter);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ============================================================
-// API Routes
+// API Routes - ✅ MUST BE AFTER app = express()
 // ============================================================
 app.use('/api/apps', appRoutes);
 app.use('/api/downloads', downloadRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+// ============================================================
+// ✅ ADD: Auth Routes (AFTER app = express())
+// ============================================================
+app.use('/api/auth', authRoutes);
 
 // ============================================================
 // Health Check
