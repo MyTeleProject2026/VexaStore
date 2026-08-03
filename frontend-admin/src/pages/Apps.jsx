@@ -75,7 +75,6 @@ export default function Apps() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Apps</h1>
@@ -86,7 +85,6 @@ export default function Apps() {
         </Link>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-md">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
         <input
@@ -98,7 +96,6 @@ export default function Apps() {
         />
       </div>
 
-      {/* Apps Grid */}
       {filteredApps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredApps.map((app) => (
