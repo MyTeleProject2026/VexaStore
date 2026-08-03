@@ -18,7 +18,6 @@ export default function Categories() {
   async function loadCategories() {
     try {
       setLoading(true);
-      // ✅ UPDATED: Use getAdminCategories()
       const res = await api.getAdminCategories();
       setCategories(res.data?.data || []);
     } catch (err) {
@@ -39,7 +38,6 @@ export default function Categories() {
       return;
     }
     try {
-      // ✅ UPDATED: Use createCategory() and updateCategory()
       if (editing) {
         await api.updateCategory(editing, form);
         showSuccess('Category updated');
@@ -59,7 +57,6 @@ export default function Categories() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this category?')) return;
     try {
-      // ✅ UPDATED: Use deleteCategory()
       await api.deleteCategory(id);
       showSuccess('Category deleted');
       loadCategories();
@@ -106,7 +103,6 @@ export default function Categories() {
         ))}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="glass-card max-w-md w-full p-6">
