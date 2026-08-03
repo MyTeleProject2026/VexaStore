@@ -195,4 +195,67 @@ router.delete('/users/:id', authAdmin, async (req, res, next) => {
   }
 });
 
+// ============================================================
+// ADMIN: Categories CRUD
+// ============================================================
+
+// Get all categories (admin)
+router.get('/categories', authAdmin, async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT * FROM categories ORDER BY sort_order ASC, name ASC`
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create category (admin only)
+router.post('/categories', authAdmin, async (req, res, next) => {
+  try {
+    const { name, slug, icon, sort_order } = req.body;
+    if (!name || !slug) {
+      return res.status(400).json({ success: false, message: 'Name and slug required' });
+    }
+    const [result] = await pool.query(
+      `INSERT INTO categories (name, slug, icon, sort_order, is_active) VALUES (?, ?, ?, ?, 1)`,
+      [name, slug, icon || null, sort_order || 0]
+    );
+    res.json({ success: true, data: { id: result.insertId } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update category (admin only)
+router.put('/categories/:id', authAdmin, async (req, res, next) => {
+  try {
+    const { name, slug, icon, sort_order, is_active } = req.body;
+    const [result] = await pool.query(
+      `UPDATE categories SET name = ?, slug = ?, icon = ?, sort_order = ?, is_active = ? WHERE id = ?`,
+      [name, slug, icon || null, sort_order || 0, is_active !== undefined ? is_active : 1, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    res.json({ success: true, message: 'Category updated' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete category (admin only)
+router.delete('/categories/:id', authAdmin, async (req, res, next) => {
+  try {
+    const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    res.json({ success: true, message: 'Category deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
