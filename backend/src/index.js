@@ -13,6 +13,18 @@ const downloadRoutes = require('./routes/downloads');
 const categoryRoutes = require('./routes/categories');
 const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
+// ============================================================
+// ADD: User Authentication Routes
+// ============================================================
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// ============================================================
+// ADD: Admin Settings Routes
+// ============================================================
+const settingsRoutes = require('./routes/settings');
+app.use('/api/admin/settings', settingsRoutes);
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
