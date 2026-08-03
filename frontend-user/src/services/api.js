@@ -18,8 +18,18 @@ api.interceptors.response.use(
   }
 );
 
+
+
 export const getApiErrorMessage = (err) => {
   return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
+};
+
+export const authApi = {
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+  verifyOtp: (data) => api.post('/auth/verify-otp', data),
+  resendOtp: (data) => api.post('/auth/resend-otp', data),
+  googleLogin: (data) => api.post('/auth/google', data),
 };
 
 export const appApi = {
