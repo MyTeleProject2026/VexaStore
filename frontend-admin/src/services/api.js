@@ -12,7 +12,6 @@ export const adminApi = axios.create({
   },
 });
 
-// Request interceptor
 adminApi.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -24,7 +23,6 @@ adminApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
 adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -42,7 +40,6 @@ export const getApiErrorMessage = (err) => {
 };
 
 export const api = {
-  // Auth
   adminLogin: (data) => adminApi.post('/api/admin/login', data),
 
   // Apps
@@ -86,16 +83,16 @@ export const api = {
   },
   deleteVersion: (id) => adminApi.delete(`/api/admin/versions/${id}`),
 
-  // Categories (public)
+  // Categories
   getCategories: () => adminApi.get('/api/categories'),
-
-  // Admin Settings Routes
+  
+  // Admin Categories
   getAdminCategories: () => adminApi.get('/api/admin/settings/categories'),
   createCategory: (data) => adminApi.post('/api/admin/settings/categories', data),
   updateCategory: (id, data) => adminApi.put(`/api/admin/settings/categories/${id}`, data),
   deleteCategory: (id) => adminApi.delete(`/api/admin/settings/categories/${id}`),
 
-  // News - Handles both FormData and JSON
+  // News
   getNews: () => adminApi.get('/api/admin/settings/news'),
   createNews: (data) => {
     if (data instanceof FormData) {
