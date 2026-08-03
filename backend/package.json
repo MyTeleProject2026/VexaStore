@@ -19,7 +19,7 @@
     "helmet": "^7.1.0",
     "express-rate-limit": "^7.4.0",
     "mime-types": "^2.1.35",
-    "cloudinary": "^2.5.1",
+    "cloudinary": "^1.41.0",
     "multer-storage-cloudinary": "^4.0.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
