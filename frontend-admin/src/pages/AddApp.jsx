@@ -94,7 +94,7 @@ export default function AddApp() {
       // ✅ Append each field manually (more reliable)
       formData.append('name', form.name.trim());
       formData.append('slug', form.slug.trim());
-      formData.append('category_id', Number(form.category_id));  // ✅ Convert to number
+      formData.append('category_id', Number(form.category_id));
       formData.append('description', form.description || '');
       formData.append('long_description', form.long_description || '');
       formData.append('developer', form.developer || 'VexaTrade');
@@ -136,7 +136,6 @@ export default function AddApp() {
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-5">
-        {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="input-label">App Name *</label>
@@ -228,7 +227,6 @@ export default function AddApp() {
           </div>
         </div>
 
-        {/* Icon Upload */}
         <div>
           <label className="input-label">App Icon</label>
           <div className="flex items-center gap-4">
@@ -258,7 +256,6 @@ export default function AddApp() {
           </div>
         </div>
 
-        {/* Feature Toggle */}
         <div className="flex items-center gap-3">
           <input
             type="checkbox"
