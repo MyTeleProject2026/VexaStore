@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
-const { upload } = require('../config/cloudinary');
+// ✅ Import from cloudinary.js (NOT upload.js)
+const { imageUpload, appFileUpload } = require('../config/cloudinary');
 
 // ============================================================
 // GET: Public site settings (no auth)
@@ -56,9 +57,9 @@ router.put('/', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Upload logo (admin only)
+// POST: Upload logo (admin only) - ✅ Uses imageUpload
 // ============================================================
-router.post('/upload-logo', authAdmin, upload.single('logo'), async (req, res, next) => {
+router.post('/upload-logo', authAdmin, imageUpload.single('logo'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const logo_url = req.file.path;
@@ -70,9 +71,9 @@ router.post('/upload-logo', authAdmin, upload.single('logo'), async (req, res, n
 });
 
 // ============================================================
-// POST: Upload favicon (admin only)
+// POST: Upload favicon (admin only) - ✅ Uses imageUpload
 // ============================================================
-router.post('/upload-favicon', authAdmin, upload.single('favicon'), async (req, res, next) => {
+router.post('/upload-favicon', authAdmin, imageUpload.single('favicon'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const favicon_url = req.file.path;
@@ -121,9 +122,9 @@ router.get('/news/:slug', async (req, res, next) => {
 });
 
 // ============================================================
-// ADMIN: News CRUD (with JSON.stringify for content)
+// ADMIN: News CRUD
 // ============================================================
-router.post('/news', authAdmin, upload.single('image'), async (req, res, next) => {
+router.post('/news', authAdmin, imageUpload.single('image'), async (req, res, next) => {
   try {
     let { title, slug, content, is_featured, is_published } = req.body;
     let image_url = null;
@@ -168,7 +169,7 @@ router.post('/news', authAdmin, upload.single('image'), async (req, res, next) =
 // ============================================================
 // ADMIN: Update news article
 // ============================================================
-router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next) => {
+router.put('/news/:id', authAdmin, imageUpload.single('image'), async (req, res, next) => {
   try {
     let { title, slug, content, is_featured, is_published } = req.body;
     let image_url = null;
