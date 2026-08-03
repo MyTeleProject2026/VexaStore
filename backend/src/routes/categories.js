@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { pool } = require('../config/database');  // ✅ Make sure this is correct
 
-// Get all categories - Public
+// ============================================================
+// GET: All categories
+// ============================================================
 router.get('/', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -17,7 +19,9 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Get single category by slug - Public
+// ============================================================
+// GET: Single category by slug
+// ============================================================
 router.get('/:slug', async (req, res, next) => {
   try {
     const { slug } = req.params;
@@ -29,6 +33,31 @@ router.get('/:slug', async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
     res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// GET: Apps by category
+// ============================================================
+router.get('/:slug/apps', async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const { limit = 20, offset = 0 } = req.query;
+    
+    const [rows] = await pool.query(
+      `SELECT a.*,
+        (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 LIMIT 1) as latest_version
+       FROM apps a
+       JOIN categories c ON c.id = a.category_id
+       WHERE c.slug = ? AND a.is_active = 1
+       ORDER BY a.total_downloads DESC
+       LIMIT ? OFFSET ?`,
+      [slug, Number(limit), Number(offset)]
+    );
+    
+    res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
   }
