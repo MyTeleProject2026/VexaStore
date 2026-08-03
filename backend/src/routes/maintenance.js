@@ -1,63 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
+const { authAdmin } = require('../middleware/auth');
 
-// ============================================================
-// GET: All categories
-// ============================================================
-router.get('/', async (req, res, next) => {
+// GET maintenance status (public)
+router.get('/status', async (req, res, next) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT id, name, slug, icon, sort_order, is_active 
-       FROM categories 
-       WHERE is_active = 1 
-       ORDER BY sort_order ASC, name ASC`
-    );
-    res.json({ success: true, data: rows });
+    const [rows] = await pool.query('SELECT is_enabled, message, scheduled_end FROM maintenance_settings WHERE id = 1');
+    const settings = rows[0] || { is_enabled: 0, message: null, scheduled_end: null };
+    res.json({
+      success: true,
+      data: {
+        is_enabled: settings.is_enabled === 1,
+        message: settings.message,
+        scheduled_end: settings.scheduled_end
+      }
+    });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
-// GET: Single category by slug
-// ============================================================
-router.get('/:slug', async (req, res, next) => {
+// POST toggle maintenance (admin only)
+router.post('/toggle', authAdmin, async (req, res, next) => {
   try {
-    const { slug } = req.params;
-    const [rows] = await pool.query(
-      `SELECT id, name, slug, icon, sort_order FROM categories WHERE slug = ? AND is_active = 1`,
-      [slug]
+    const { enabled, message, scheduled_end } = req.body;
+    await pool.query(
+      `UPDATE maintenance_settings SET is_enabled = ?, message = ?, scheduled_end = ?, enabled_by = ?, enabled_at = NOW(), updated_at = NOW() WHERE id = 1`,
+      [enabled ? 1 : 0, message || null, scheduled_end || null, req.admin.id]
     );
-    if (!rows.length) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
-    }
-    res.json({ success: true, data: rows[0] });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ============================================================
-// GET: Apps by category
-// ============================================================
-router.get('/:slug/apps', async (req, res, next) => {
-  try {
-    const { slug } = req.params;
-    const { limit = 20, offset = 0 } = req.query;
-    
-    const [rows] = await pool.query(
-      `SELECT a.*,
-        (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 LIMIT 1) as latest_version
-       FROM apps a
-       JOIN categories c ON c.id = a.category_id
-       WHERE c.slug = ? AND a.is_active = 1
-       ORDER BY a.total_downloads DESC
-       LIMIT ? OFFSET ?`,
-      [slug, Number(limit), Number(offset)]
-    );
-    
-    res.json({ success: true, data: rows });
+    res.json({ success: true, message: `Maintenance ${enabled ? 'enabled' : 'disabled'}` });
   } catch (error) {
     next(error);
   }
