@@ -26,7 +26,8 @@ export default function News() {
   async function loadArticles() {
     try {
       setLoading(true);
-      const res = await api.get('/admin/settings/news');
+      // ✅ UPDATED: Use getNews()
+      const res = await api.getNews();
       setArticles(res.data?.data || []);
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -70,14 +71,15 @@ export default function News() {
         }
       });
 
-      const endpoint = editing ? `/admin/settings/news/${editing}` : '/admin/settings/news';
-      const method = editing ? 'put' : 'post';
+      // ✅ UPDATED: Use createNews() and updateNews()
+      if (editing) {
+        await api.updateNews(editing, data);
+        showSuccess('Article updated');
+      } else {
+        await api.createNews(data);
+        showSuccess('Article created');
+      }
       
-      await api[method](endpoint, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      showSuccess(editing ? 'Article updated' : 'Article created');
       setShowModal(false);
       setEditing(null);
       setForm({ title: '', slug: '', content: '', is_featured: 0, is_published: 1, image: null, image_preview: null });
@@ -90,7 +92,8 @@ export default function News() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this article?')) return;
     try {
-      await api.delete(`/admin/settings/news/${id}`);
+      // ✅ UPDATED: Use deleteNews()
+      await api.deleteNews(id);
       showSuccess('Article deleted');
       loadArticles();
     } catch (err) {
