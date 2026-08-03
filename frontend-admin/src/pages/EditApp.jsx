@@ -150,7 +150,6 @@ export default function EditApp() {
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-5">
-        {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className="input-label">App Name *</label>
@@ -236,7 +235,6 @@ export default function EditApp() {
           </div>
         </div>
 
-        {/* Icon Upload */}
         <div>
           <label className="input-label">App Icon</label>
           <div className="flex items-center gap-4">
@@ -245,69 +243,4 @@ export default function EditApp() {
                 <img 
                   src={form.icon_preview || existingIcon} 
                   alt="Icon preview" 
-                  className="w-20 h-20 rounded-xl object-cover border border-dark-border" 
-                />
-                <button
-                  type="button"
-                  onClick={removeIcon}
-                  className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <label className="w-20 h-20 rounded-xl border-2 border-dashed border-dark-border flex items-center justify-center cursor-pointer hover:border-accent-primary transition">
-                <Upload size={24} className="text-text-secondary" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-            )}
-            <span className="text-xs text-text-secondary">Upload new icon to replace</span>
-          </div>
-        </div>
-
-        {/* Toggles */}
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input
-              type="checkbox"
-              name="is_featured"
-              checked={form.is_featured === 1}
-              onChange={handleChange}
-              className="w-4 h-4 accent-accent-primary"
-            />
-            Featured
-          </label>
-          <label className="flex items-center gap-2 text-sm text-text-secondary">
-            <input
-              type="checkbox"
-              name="is_active"
-              checked={form.is_active === 1}
-              onChange={handleChange}
-              className="w-4 h-4 accent-accent-primary"
-            />
-            Active
-          </label>
-        </div>
-
-        <div className="flex gap-3 pt-4 border-t border-dark-border">
-          <button type="submit" disabled={submitting} className="btn-primary flex items-center gap-2">
-            {submitting ? (
-              <>
-                <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
-                Saving...
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </button>
-          <Link to="/apps" className="btn-secondary">Cancel</Link>
-        </div>
-      </form>
-    </div>
-  );
-}
+                  className="w-20 h-20 rounded-xl
