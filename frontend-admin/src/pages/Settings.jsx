@@ -28,7 +28,8 @@ export default function Settings() {
   async function loadSettings() {
     try {
       setLoading(true);
-      const res = await api.get('/admin/settings');
+      // ✅ UPDATED: Use getSettings()
+      const res = await api.getSettings();
       if (res.data?.success) {
         setSettings(res.data.data);
       }
@@ -42,7 +43,8 @@ export default function Settings() {
   async function handleSave() {
     try {
       setSaving(true);
-      await api.put('/admin/settings', settings);
+      // ✅ UPDATED: Use updateSettings()
+      await api.updateSettings(settings);
       showSuccess('Settings updated');
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -52,15 +54,20 @@ export default function Settings() {
   }
 
   async function handleFileUpload(field, file) {
-    const formData = new FormData();
-    formData.append(field, file);
     try {
-      const res = await api.post(`/admin/settings/upload-${field}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      if (res.data?.success) {
-        setSettings(prev => ({ ...prev, [field === 'logo' ? 'logo_url' : 'favicon_url']: res.data[field + '_url'] }));
-        showSuccess(`${field} uploaded`);
+      // ✅ UPDATED: Use uploadLogo() and uploadFavicon()
+      if (field === 'logo') {
+        const res = await api.uploadLogo(file);
+        if (res.data?.success) {
+          setSettings(prev => ({ ...prev, logo_url: res.data.logo_url }));
+          showSuccess('Logo uploaded');
+        }
+      } else if (field === 'favicon') {
+        const res = await api.uploadFavicon(file);
+        if (res.data?.success) {
+          setSettings(prev => ({ ...prev, favicon_url: res.data.favicon_url }));
+          showSuccess('Favicon uploaded');
+        }
       }
     } catch (err) {
       showError(getApiErrorMessage(err));
