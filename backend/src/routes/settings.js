@@ -113,42 +113,51 @@ router.get('/news/:slug', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// ADMIN: News CRUD - ✅ FIXED: Handles both FormData and JSON
-// ============================================================
+
 router.post('/news', authAdmin, upload.single('image'), async (req, res, next) => {
   try {
     let { title, slug, content, is_featured, is_published } = req.body;
     let image_url = null;
     
-    // If there's a file, get its path
     if (req.file) {
       image_url = req.file.path;
     }
     
-    console.log('📝 Creating article:', { 
-      title, 
-      slug, 
-      contentLength: content?.length,
-      hasFile: !!req.file 
-    });
+    // ✅ TRIM and VALIDATE
+    title = title?.trim();
+    slug = slug?.trim();
+    content = content?.trim();
     
     if (!title || !slug || !content) {
       return res.status(400).json({ success: false, message: 'Title, slug, content required' });
     }
     
+    // ✅ LOG for debugging
+    console.log('📝 Creating article:', { 
+      title: title.substring(0, 50), 
+      slug, 
+      contentLength: content.length 
+    });
+    
+    // ✅ Store content as-is (parameterized query will escape it)
     const [result] = await pool.query(
       `INSERT INTO news_articles (title, slug, content, image_url, is_featured, is_published, published_at)
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [title.trim(), slug.trim(), content, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
+      [title, slug, content, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
     );
     
     res.json({ success: true, data: { id: result.insertId } });
   } catch (error) {
     console.error('❌ News creation error:', error);
-    next(error);
+    // Send detailed error
+    res.status(500).json({ 
+      success: false, 
+      message: error.message,
+      sql: error.sql 
+    });
   }
 });
+
 
 router.put('/news/:id', authAdmin, upload.single('image'), async (req, res, next) => {
   try {
