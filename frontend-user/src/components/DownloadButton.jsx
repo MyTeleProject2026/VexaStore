@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Download, CheckCircle } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 
-export default function DownloadButton({ version, appId, appSlug }) {
+export default function DownloadButton({ version, appId }) {
   const [downloading, setDownloading] = useState(false);
   const { showSuccess, showError } = useNotification();
 
@@ -11,7 +11,6 @@ export default function DownloadButton({ version, appId, appSlug }) {
     try {
       setDownloading(true);
       
-      // ✅ Track download for analytics
       await appApi.trackDownload({
         app_id: appId,
         version_id: version.id,
@@ -22,7 +21,6 @@ export default function DownloadButton({ version, appId, appSlug }) {
       
       showSuccess(`Downloading ${version.os} version...`);
       
-      // ✅ DIRECT DOWNLOAD – opens the file URL
       const fileUrl = `${import.meta.env.VITE_API_BASE_URL}${version.file_url}`;
       window.open(fileUrl, '_blank');
       
