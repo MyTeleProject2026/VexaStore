@@ -5,7 +5,11 @@ import AppCard from '../components/AppCard';
 import FeaturedApps from '../components/FeaturedApps';
 import OSFilter from '../components/OSFilter';
 import StatsCard from '../components/StatsCard';
-import { Download, Smartphone, Laptop, TrendingUp, Award, Zap, Shield, Sparkles, ArrowRight } from 'lucide-react';
+import { 
+  Download, Smartphone, Laptop, TrendingUp, Award, 
+  Zap, Shield, Sparkles, ArrowRight, Play, Star, 
+  Clock, CheckCircle 
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function HomePage() {
@@ -53,77 +57,136 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-10">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a0e1a] to-[#050812] border border-white/5 p-8 md:p-12">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl"></div>
+    <div className="space-y-8 pb-20">
+      {/* Hero Section - Mobile First */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0a0e1a] to-[#050812] border border-white/5 p-5 md:p-8">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl"></div>
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-xs font-medium text-cyan-400 mb-4">
-            <Zap size={14} />
-            <span>VexaTrade Blockchain Ecosystem</span>
+          <div className="flex items-center gap-2 text-[10px] font-medium text-cyan-400 mb-3">
+            <Zap size={12} />
+            <span>VexaTrade Ecosystem</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-            Discover <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">Apps</span> for Every Platform
+          <h1 className="text-2xl md:text-4xl font-bold text-white mb-3">
+            Discover <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">Apps</span>
           </h1>
-          <p className="text-slate-400 max-w-xl text-base md:text-lg mb-6">
-            Download verified apps from the VexaTrade ecosystem. iOS, Android, Windows, macOS, Linux — all in one secure blockchain-powered store.
+          <p className="text-slate-400 text-sm md:text-base max-w-xl mb-4">
+            Download verified apps from the VexaTrade ecosystem. iOS, Android, Windows, macOS, Linux.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/search" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-semibold hover:scale-[1.02] transition">
-              Browse Apps <ArrowRight size={18} />
+          <div className="flex flex-wrap gap-2">
+            <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-semibold text-sm hover:scale-[1.02] transition">
+              Browse Apps <ArrowRight size={16} />
             </Link>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1"><Shield size={14} className="text-emerald-400" /> Secure</span>
-              <span className="flex items-center gap-1"><Zap size={14} className="text-cyan-400" /> Fast</span>
-              <span className="flex items-center gap-1"><Sparkles size={14} className="text-purple-400" /> Verified</span>
+            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+              <span className="flex items-center gap-1"><Shield size={12} className="text-emerald-400" /> Secure</span>
+              <span className="flex items-center gap-1"><Zap size={12} className="text-cyan-400" /> Fast</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard label="Total Apps" value={apps.length} icon={Download} className="border border-white/5 hover:border-cyan-500/20 transition" />
-        <StatsCard label="Categories" value={categories.length} icon={Award} className="border border-white/5 hover:border-cyan-500/20 transition" />
-        <StatsCard label="Platforms" value="5" icon={Laptop} className="border border-white/5 hover:border-cyan-500/20 transition" />
-        <StatsCard label="Downloads" value={(apps.reduce((acc, a) => acc + (a.total_downloads || 0), 0)).toLocaleString()} icon={TrendingUp} className="border border-white/5 hover:border-cyan-500/20 transition" />
+      {/* Quick Categories - Mobile */}
+      <div className="grid grid-cols-5 gap-2">
+        <Link to="/category/ios" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+          <Apple size={24} className="text-blue-400" />
+          <span className="text-[10px] text-slate-400">iOS</span>
+        </Link>
+        <Link to="/category/android" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+          <Smartphone size={24} className="text-green-400" />
+          <span className="text-[10px] text-slate-400">Android</span>
+        </Link>
+        <Link to="/category/windows" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+          <Monitor size={24} className="text-cyan-400" />
+          <span className="text-[10px] text-slate-400">Windows</span>
+        </Link>
+        <Link to="/category/macos" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+          <Apple size={24} className="text-purple-400" />
+          <span className="text-[10px] text-slate-400">macOS</span>
+        </Link>
+        <Link to="/category/linux" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+          <Terminal size={24} className="text-amber-400" />
+          <span className="text-[10px] text-slate-400">Linux</span>
+        </Link>
+      </div>
+
+      {/* Stats - Mobile Friendly */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatsCard label="Total Apps" value={apps.length} icon={Download} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
+        <StatsCard label="Platforms" value="5" icon={Laptop} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
       </div>
 
       {/* Featured */}
       {featured.length > 0 && (
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sparkles size={20} className="text-cyan-400" />
-              Featured Apps
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Sparkles size={18} className="text-cyan-400" />
+              Featured
             </h2>
-            <Link to="/search" className="text-sm text-slate-500 hover:text-cyan-400 transition flex items-center gap-1">
-              View All <ArrowRight size={14} />
+            <Link to="/search" className="text-xs text-slate-500 hover:text-cyan-400 transition flex items-center gap-1">
+              View All <ArrowRight size={12} />
             </Link>
           </div>
           <FeaturedApps apps={featured} />
         </section>
       )}
 
+      {/* Top Downloads - New Section */}
+      {apps.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <TrendingUp size={18} className="text-emerald-400" />
+              Top Downloads
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {apps.slice(0, 3).map((app, index) => (
+              <Link key={app.id} to={`/app/${app.slug}`} className="flex items-center gap-3 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 font-bold text-sm">
+                  #{index + 1}
+                </div>
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-dark-bg border border-dark-border flex-shrink-0">
+                  {app.icon_url ? (
+                    <img src={`${import.meta.env.VITE_API_BASE_URL}${app.icon_url}`} alt={app.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-sm font-bold text-accent-primary">
+                      {app.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{app.name}</p>
+                  <p className="text-xs text-slate-500 truncate">{app.developer || 'VexaTrade'}</p>
+                </div>
+                <div className="text-xs text-slate-500">
+                  <Download size={14} className="inline mr-1" />
+                  {app.total_downloads || 0}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* All Apps */}
       <section>
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Download size={20} className="text-emerald-400" />
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Download size={18} className="text-emerald-400" />
             All Apps
           </h2>
-          <OSFilter selected={selectedOS} onChange={setSelectedOS} />
+          <OSFilter selected={selectedOS} onChange={setSelectedOS} className="flex-wrap" />
         </div>
         {filteredApps.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredApps.map((app) => <AppCard key={app.id} app={app} />)}
           </div>
         ) : (
-          <div className="glass-card p-12 text-center text-slate-500 border border-white/5 rounded-3xl">
-            <Smartphone size={48} className="mx-auto text-slate-600/30 mb-4" />
-            <p className="text-lg font-medium text-slate-400">No apps found</p>
-            <p className="text-sm mt-1">Try selecting a different platform or check back later.</p>
+          <div className="glass-card p-8 text-center text-slate-500 border border-white/5 rounded-2xl">
+            <Smartphone size={40} className="mx-auto text-slate-600/30 mb-3" />
+            <p className="text-base font-medium text-slate-400">No apps found</p>
+            <p className="text-xs mt-1">Try selecting a different platform</p>
           </div>
         )}
       </section>
