@@ -11,12 +11,11 @@ import EditApp from './pages/EditApp';
 import Versions from './pages/Versions';
 import Analytics from './pages/Analytics';
 import Maintenance from './pages/Maintenance';
-// Add these imports
+// ========== ADD: New Pages ==========
 import Categories from './pages/Categories';
 import Users from './pages/Users';
 import News from './pages/News';
 import Settings from './pages/Settings';
-
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -56,6 +55,7 @@ function AppContent() {
     return <Login onLogin={handleLogin} />;
   }
 
+  // ========== CORRECTED JSX STRUCTURE ==========
   return (
     <BrowserRouter>
       <Layout onLogout={handleLogout}>
@@ -67,12 +67,12 @@ function AppContent() {
           <Route path="/apps/:id/versions" element={<Versions />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/maintenance" element={<Maintenance />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-          // Add these routes inside <Routes>
+          {/* ========== ADD: New Routes ========== */}
           <Route path="/categories" element={<Categories />} />
           <Route path="/users" element={<Users />} />
           <Route path="/news" element={<News />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
     </BrowserRouter>
