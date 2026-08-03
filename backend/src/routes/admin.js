@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { pool } = require('../config/database');
 const { authAdmin } = require('../middleware/auth');
+// ✅ Import from cloudinary.js (NOT upload.js)
 const { imageUpload, appFileUpload } = require('../config/cloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
@@ -64,7 +65,7 @@ router.post('/login', async (req, res, next) => {
 });
 
 // ============================================================
-// GET: Test route (to verify router is mounted)
+// GET: Test route
 // ============================================================
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Admin router is working!' });
@@ -130,7 +131,7 @@ router.get('/apps/:id', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Create app (admin only) - ✅ Uses imageUpload for icon
+// POST: Create app (admin only) - ✅ Cloudinary imageUpload
 // ============================================================
 router.post('/apps', authAdmin, imageUpload.single('icon'), async (req, res, next) => {
   try {
@@ -146,7 +147,6 @@ router.post('/apps', authAdmin, imageUpload.single('icon'), async (req, res, nex
     // ✅ Cloudinary returns the URL
     const icon_url = req.file ? req.file.path : null;
     
-    // Check if slug exists
     const [existing] = await pool.query('SELECT id FROM apps WHERE slug = ?', [slug]);
     if (existing.length) {
       return res.status(400).json({ success: false, message: 'Slug already exists' });
@@ -170,7 +170,7 @@ router.post('/apps', authAdmin, imageUpload.single('icon'), async (req, res, nex
 });
 
 // ============================================================
-// PUT: Update app (admin only) - ✅ Uses imageUpload for icon
+// PUT: Update app (admin only) - ✅ Cloudinary imageUpload
 // ============================================================
 router.put('/apps/:id', authAdmin, imageUpload.single('icon'), async (req, res, next) => {
   try {
@@ -220,7 +220,6 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Delete versions and logs
     await pool.query('DELETE FROM download_logs WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_versions WHERE app_id = ?', [id]);
     await pool.query('DELETE FROM app_reviews WHERE app_id = ?', [id]);
@@ -237,7 +236,7 @@ router.delete('/apps/:id', authAdmin, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Add version (admin only) - ✅ Uses appFileUpload for APK files
+// POST: Add version (admin only) - ✅ Cloudinary appFileUpload
 // ============================================================
 router.post('/versions', authAdmin, appFileUpload.single('file'), async (req, res, next) => {
   try {
@@ -259,7 +258,6 @@ router.post('/versions', authAdmin, appFileUpload.single('file'), async (req, re
       return res.status(404).json({ success: false, message: 'App not found' });
     }
     
-    // If this is latest, update other versions for this OS
     if (is_latest === '1' || is_latest === 1) {
       await pool.query(
         'UPDATE app_versions SET is_latest = 0 WHERE app_id = ? AND os = ?',
