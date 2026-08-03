@@ -70,7 +70,6 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Analytics</h1>
@@ -95,7 +94,6 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card p-4">
           <div className="flex items-center justify-between">
@@ -134,7 +132,6 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-card p-6 lg:col-span-2">
           <h3 className="text-sm font-semibold text-white mb-4">Download Trends</h3>
@@ -181,7 +178,6 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Top Apps */}
       <div className="glass-card p-6">
         <h3 className="text-sm font-semibold text-white mb-4">Top Performing Apps</h3>
         {topApps.length > 0 ? (
