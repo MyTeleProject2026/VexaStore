@@ -18,7 +18,8 @@ export default function Categories() {
   async function loadCategories() {
     try {
       setLoading(true);
-      const res = await api.getCategories();
+      // ✅ UPDATED: Use getAdminCategories()
+      const res = await api.getAdminCategories();
       setCategories(res.data?.data || []);
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -38,11 +39,14 @@ export default function Categories() {
       return;
     }
     try {
-      // Use admin API to create/update category
-      const endpoint = editing ? `/admin/categories/${editing}` : '/admin/categories';
-      const method = editing ? 'put' : 'post';
-      await api[method](endpoint, form);
-      showSuccess(editing ? 'Category updated' : 'Category created');
+      // ✅ UPDATED: Use createCategory() and updateCategory()
+      if (editing) {
+        await api.updateCategory(editing, form);
+        showSuccess('Category updated');
+      } else {
+        await api.createCategory(form);
+        showSuccess('Category created');
+      }
       setShowModal(false);
       setEditing(null);
       setForm({ name: '', slug: '', icon: '', sort_order: 0 });
@@ -55,7 +59,8 @@ export default function Categories() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this category?')) return;
     try {
-      await api.delete(`/admin/categories/${id}`);
+      // ✅ UPDATED: Use deleteCategory()
+      await api.deleteCategory(id);
       showSuccess('Category deleted');
       loadCategories();
     } catch (err) {
