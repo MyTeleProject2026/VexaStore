@@ -63,9 +63,8 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// GET: Test route (to verify router is mounted)
-// ============================================================
+
+// Add this test route
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Admin router is working!' });
 });
