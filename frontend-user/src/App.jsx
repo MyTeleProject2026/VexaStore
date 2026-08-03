@@ -7,6 +7,11 @@ import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import AppPage from './pages/AppPage';
 import SearchPage from './pages/SearchPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import VerifyOtp from './pages/VerifyOtp';
+import Profile from './pages/Profile';
+import Downloads from './pages/Downloads';
 import { NotificationProvider, useNotification } from './hooks/useNotification';
 
 function AppContent() {
@@ -56,6 +61,11 @@ function AppContent() {
           <Route path="category/:slug" element={<CategoryPage />} />
           <Route path="app/:slug" element={<AppPage />} />
           <Route path="search" element={<SearchPage />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="verify-otp" element={<VerifyOtp />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="downloads" element={<Downloads />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
