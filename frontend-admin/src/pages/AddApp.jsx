@@ -75,10 +75,11 @@ export default function AddApp() {
     setForm(prev => ({ ...prev, icon: null, icon_preview: null }));
   };
 
+  // ✅ FIXED: handleSubmit with proper FormData
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // ✅ Validate required fields
+    // ✅ Validate
     if (!form.name || !form.slug || !form.category_id) {
       showError('Name, slug, and category are required');
       return;
@@ -86,27 +87,37 @@ export default function AddApp() {
 
     try {
       setLoading(true);
-      const data = new FormData();
       
-      // ✅ Send all form data
-      data.append('name', form.name.trim());
-      data.append('slug', form.slug.trim());
-      data.append('category_id', Number(form.category_id));  // ✅ Convert to number
-      data.append('description', form.description || '');
-      data.append('long_description', form.long_description || '');
-      data.append('developer', form.developer || 'VexaTrade');
-      data.append('website', form.website || '');
-      data.append('is_featured', form.is_featured);
+      // ✅ Build FormData correctly
+      const formData = new FormData();
+      
+      // ✅ Append each field manually (more reliable)
+      formData.append('name', form.name.trim());
+      formData.append('slug', form.slug.trim());
+      formData.append('category_id', Number(form.category_id));  // ✅ Convert to number
+      formData.append('description', form.description || '');
+      formData.append('long_description', form.long_description || '');
+      formData.append('developer', form.developer || 'VexaTrade');
+      formData.append('website', form.website || '');
+      formData.append('is_featured', String(form.is_featured));
       
       if (form.icon instanceof File) {
-        data.append('icon', form.icon);
+        formData.append('icon', form.icon);
       }
 
-      await api.createApp(data);
+      // ✅ Debug: Log FormData contents
+      console.log('📤 Sending FormData:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value instanceof File ? value.name : value}`);
+      }
+
+      const response = await api.createApp(formData);
+      console.log('✅ Response:', response);
+      
       showSuccess('App created successfully!');
       navigate('/apps');
     } catch (err) {
-      console.error('Create app error:', err);
+      console.error('❌ Create app error:', err);
       showError(getApiErrorMessage(err) || 'Failed to create app');
     } finally {
       setLoading(false);
