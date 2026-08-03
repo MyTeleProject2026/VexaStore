@@ -26,7 +26,6 @@ export default function News() {
   async function loadArticles() {
     try {
       setLoading(true);
-      // ✅ UPDATED: Use getNews()
       const res = await api.getNews();
       setArticles(res.data?.data || []);
     } catch (err) {
@@ -54,30 +53,50 @@ export default function News() {
     }
   };
 
+  // ✅ FIXED: Handle form submission with full HTML content
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.slug || !form.content) {
-      showError('Title, slug, and content are required');
+    
+    // Validate
+    if (!form.title.trim()) {
+      showError('Title is required');
+      return;
+    }
+    if (!form.slug.trim()) {
+      showError('Slug is required');
+      return;
+    }
+    if (!form.content.trim()) {
+      showError('Content is required');
+      return;
+    }
+
+    // ✅ Content length check (LONGTEXT can handle up to 4GB)
+    if (form.content.length > 4000000) {
+      showError('Content is too large. Please reduce the size.');
       return;
     }
 
     try {
       const data = new FormData();
-      Object.keys(form).forEach(key => {
-        if (key === 'image' && form[key] instanceof File) {
-          data.append('image', form[key]);
-        } else if (key !== 'image_preview' && form[key] !== undefined && form[key] !== null) {
-          data.append(key, form[key]);
-        }
-      });
+      
+      // ✅ Append all form data
+      data.append('title', form.title.trim());
+      data.append('slug', form.slug.trim());
+      data.append('content', form.content.trim()); // Full HTML content
+      data.append('is_featured', form.is_featured);
+      data.append('is_published', form.is_published);
+      
+      if (form.image instanceof File) {
+        data.append('image', form.image);
+      }
 
-      // ✅ UPDATED: Use createNews() and updateNews()
       if (editing) {
         await api.updateNews(editing, data);
-        showSuccess('Article updated');
+        showSuccess('Article updated successfully!');
       } else {
         await api.createNews(data);
-        showSuccess('Article created');
+        showSuccess('Article created successfully!');
       }
       
       setShowModal(false);
@@ -85,14 +104,14 @@ export default function News() {
       setForm({ title: '', slug: '', content: '', is_featured: 0, is_published: 1, image: null, image_preview: null });
       loadArticles();
     } catch (err) {
-      showError(getApiErrorMessage(err));
+      console.error('Submit error:', err);
+      showError(getApiErrorMessage(err) || 'Failed to save article');
     }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this article?')) return;
     try {
-      // ✅ UPDATED: Use deleteNews()
       await api.deleteNews(id);
       showSuccess('Article deleted');
       loadArticles();
@@ -135,7 +154,9 @@ export default function News() {
               <img src={article.image_url} alt={article.title} className="w-full h-40 object-cover rounded-xl mb-3" />
             )}
             <h3 className="font-semibold text-white line-clamp-2">{article.title}</h3>
-            <p className="text-xs text-text-secondary mt-1 line-clamp-2">{article.content?.replace(/<[^>]*>/g, '').slice(0, 100)}</p>
+            <p className="text-xs text-text-secondary mt-1 line-clamp-2">
+              {article.content?.replace(/<[^>]*>/g, '').slice(0, 100)}
+            </p>
             <div className="flex items-center gap-2 mt-2">
               {article.is_featured && <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">Featured</span>}
               {article.is_published ? (
@@ -151,7 +172,7 @@ export default function News() {
                   setForm({
                     title: article.title,
                     slug: article.slug,
-                    content: article.content,
+                    content: article.content || '',
                     is_featured: article.is_featured || 0,
                     is_published: article.is_published !== undefined ? article.is_published : 1,
                     image: null,
@@ -181,7 +202,7 @@ export default function News() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* ✅ FIXED: Modal with better content handling */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
           <div className="glass-card max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -198,6 +219,7 @@ export default function News() {
                   className="input-field"
                   value={form.title}
                   onChange={e => setForm({...form, title: e.target.value, slug: generateSlug(e.target.value)})}
+                  placeholder="Enter article title"
                   required
                 />
               </div>
@@ -207,18 +229,25 @@ export default function News() {
                   className="input-field"
                   value={form.slug}
                   onChange={e => setForm({...form, slug: e.target.value})}
+                  placeholder="article-slug"
                   required
                 />
               </div>
               <div>
                 <label className="input-label">Content (HTML) *</label>
+                <div className="text-xs text-text-secondary mb-1">
+                  Supports HTML tags: &lt;p&gt;, &lt;h1&gt;-&lt;h6&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;em&gt;, etc.
+                </div>
                 <textarea
-                  className="input-field min-h-[200px] font-mono text-sm"
+                  className="input-field min-h-[250px] font-mono text-sm"
                   value={form.content}
                   onChange={e => setForm({...form, content: e.target.value})}
-                  placeholder="<p>Your article content here...</p>"
+                  placeholder="<h1>Welcome to VexaStore</h1>"
                   required
                 />
+                <div className="text-xs text-text-secondary mt-1">
+                  Characters: {form.content.length}
+                </div>
               </div>
               <div>
                 <label className="input-label">Image</label>
