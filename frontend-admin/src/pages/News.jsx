@@ -17,6 +17,7 @@ export default function News() {
     image: null,
     image_preview: null
   });
+  const [submitting, setSubmitting] = useState(false);
   const { showSuccess, showError } = useNotification();
 
   useEffect(() => {
@@ -71,34 +72,49 @@ export default function News() {
       return;
     }
 
-    // ✅ Content length check (LONGTEXT can handle up to 4GB)
+    // Content length check
     if (form.content.length > 4000000) {
-      showError('Content is too large. Please reduce the size.');
+      showError('Content is too large (max 4MB). Please reduce the size.');
       return;
     }
 
     try {
-      const data = new FormData();
+      setSubmitting(true);
       
-      // ✅ Append all form data
-      data.append('title', form.title.trim());
-      data.append('slug', form.slug.trim());
-      data.append('content', form.content.trim()); // Full HTML content
-      data.append('is_featured', form.is_featured);
-      data.append('is_published', form.is_published);
-      
-      if (form.image instanceof File) {
-        data.append('image', form.image);
-      }
+      // ✅ Build data object
+      const data = {
+        title: form.title.trim(),
+        slug: form.slug.trim(),
+        content: form.content.trim(),
+        is_featured: form.is_featured,
+        is_published: form.is_published
+      };
 
-      if (editing) {
-        await api.updateNews(editing, data);
-        showSuccess('Article updated successfully!');
+      // ✅ If there's an image, send as FormData with the image
+      if (form.image instanceof File) {
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('slug', data.slug);
+        formData.append('content', data.content);
+        formData.append('is_featured', data.is_featured);
+        formData.append('is_published', data.is_published);
+        formData.append('image', form.image);
+
+        if (editing) {
+          await api.updateNews(editing, formData);
+        } else {
+          await api.createNews(formData);
+        }
       } else {
-        await api.createNews(data);
-        showSuccess('Article created successfully!');
+        // ✅ No image: send as JSON (supports any size)
+        if (editing) {
+          await api.updateNews(editing, data);
+        } else {
+          await api.createNews(data);
+        }
       }
       
+      showSuccess(editing ? 'Article updated successfully!' : 'Article created successfully!');
       setShowModal(false);
       setEditing(null);
       setForm({ title: '', slug: '', content: '', is_featured: 0, is_published: 1, image: null, image_preview: null });
@@ -106,6 +122,8 @@ export default function News() {
     } catch (err) {
       console.error('Submit error:', err);
       showError(getApiErrorMessage(err) || 'Failed to save article');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -202,7 +220,7 @@ export default function News() {
         </div>
       )}
 
-      {/* ✅ FIXED: Modal with better content handling */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
           <div className="glass-card max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -236,17 +254,17 @@ export default function News() {
               <div>
                 <label className="input-label">Content (HTML) *</label>
                 <div className="text-xs text-text-secondary mb-1">
-                  Supports HTML tags: &lt;p&gt;, &lt;h1&gt;-&lt;h6&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;em&gt;, etc.
+                  Supports any HTML content. Full page HTML allowed.
                 </div>
                 <textarea
                   className="input-field min-h-[250px] font-mono text-sm"
                   value={form.content}
                   onChange={e => setForm({...form, content: e.target.value})}
-                  placeholder="<h1>Welcome to VexaStore</h1>"
+                  placeholder="<h1>Your content here</h1>"
                   required
                 />
                 <div className="text-xs text-text-secondary mt-1">
-                  Characters: {form.content.length}
+                  Characters: {form.content.length.toLocaleString()}
                 </div>
               </div>
               <div>
@@ -282,8 +300,8 @@ export default function News() {
                 </label>
               </div>
               <div className="flex gap-3 pt-4 border-t border-dark-border">
-                <button type="submit" className="btn-primary flex-1">
-                  {editing ? 'Update' : 'Create'}
+                <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                  {submitting ? 'Saving...' : (editing ? 'Update' : 'Create')}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
                   Cancel
