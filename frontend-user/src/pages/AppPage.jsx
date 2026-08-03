@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { ChevronLeft, Download, Star, Share2, ExternalLink, Smartphone, Apple, Monitor, Terminal } from 'lucide-react';
+import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Apple, Monitor, Terminal } from 'lucide-react';
 import DownloadButton from '../components/DownloadButton';
 
 const OS_ICONS = {
@@ -17,7 +17,7 @@ export default function AppPage() {
   const { slug } = useParams();
   const [app, setApp] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { showError, showSuccess } = useNotification();
+  const { showError } = useNotification();
   const [selectedOS, setSelectedOS] = useState('');
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function AppPage() {
               })}
             </div>
             {currentVersions.map((version) => (
-              <DownloadButton key={version.id} version={version} appId={app.id} appSlug={app.slug} />
+              <DownloadButton key={version.id} version={version} appId={app.id} />
             ))}
           </>
         ) : (
