@@ -28,7 +28,6 @@ export default function Settings() {
   async function loadSettings() {
     try {
       setLoading(true);
-      // ✅ UPDATED: Use getSettings()
       const res = await api.getSettings();
       if (res.data?.success) {
         setSettings(res.data.data);
@@ -43,7 +42,6 @@ export default function Settings() {
   async function handleSave() {
     try {
       setSaving(true);
-      // ✅ UPDATED: Use updateSettings()
       await api.updateSettings(settings);
       showSuccess('Settings updated');
     } catch (err) {
@@ -55,7 +53,6 @@ export default function Settings() {
 
   async function handleFileUpload(field, file) {
     try {
-      // ✅ UPDATED: Use uploadLogo() and uploadFavicon()
       if (field === 'logo') {
         const res = await api.uploadLogo(file);
         if (res.data?.success) {
