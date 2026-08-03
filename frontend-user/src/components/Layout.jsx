@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
   Search, Menu, X, Download, Smartphone, Apple, Monitor, Terminal, 
-  Home, User, LogIn, UserPlus, Settings, Heart, Clock, Zap 
+  Home, User, LogIn, UserPlus, Settings, Heart, Clock, Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -13,7 +13,6 @@ export default function Layout() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem('vexastore_user_token');
     const userData = localStorage.getItem('vexastore_user');
     if (token && userData) {
@@ -52,10 +51,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white">
-      {/* Top Bar - Mobile First */}
+      {/* Top Bar */}
       <header className="sticky top-0 z-40 bg-dark-card/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
         <div className="px-4 py-2 flex items-center justify-between gap-2">
-          {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center border border-cyan-500/20">
               <Download size={18} className="text-cyan-400" />
@@ -65,9 +63,7 @@ export default function Layout() {
             </div>
           </NavLink>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-1">
-            {/* Search Button */}
             <button
               onClick={() => navigate('/search')}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
@@ -75,13 +71,9 @@ export default function Layout() {
               <Search size={20} />
             </button>
 
-            {/* Account Button */}
             {isLoggedIn ? (
               <div className="relative group">
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition"
-                >
+                <button className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition">
                   <User size={20} />
                 </button>
               </div>
@@ -94,7 +86,6 @@ export default function Layout() {
               </NavLink>
             )}
 
-            {/* Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
@@ -104,7 +95,6 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Quick Search Bar (Mobile) */}
         <div className="px-4 pb-3 md:hidden">
           <form onSubmit={handleSearch} className="relative">
             <input
@@ -118,7 +108,6 @@ export default function Layout() {
           </form>
         </div>
 
-        {/* Category Quick Tabs (Mobile) */}
         <div className="px-4 pb-2 overflow-x-auto scrollbar-hide flex gap-2 md:hidden">
           {categories.map((cat) => (
             <NavLink
@@ -143,9 +132,8 @@ export default function Layout() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-30 bg-dark-bg/90 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
           <div className="w-80 bg-dark-card h-full p-6 shadow-2xl border-r border-white/5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* User Profile Section */}
-            <div className="mb-6 pb-4 border-b border-white/5">
-              {isLoggedIn && user ? (
+            {isLoggedIn && user ? (
+              <div className="mb-6 pb-4 border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border border-cyan-500/20">
                     <span className="text-lg font-bold text-cyan-400">
@@ -157,54 +145,30 @@ export default function Layout() {
                     <p className="text-sm text-slate-500 truncate">{user.email}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-400">Sign in to access your downloads and favorites</p>
-                  <div className="flex gap-2">
-                    <NavLink to="/login" className="flex-1 btn-primary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
-                      Sign In
-                    </NavLink>
-                    <NavLink to="/register" className="flex-1 btn-secondary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
-                      Register
-                    </NavLink>
-                  </div>
+              </div>
+            ) : (
+              <div className="mb-6 pb-4 border-b border-white/5">
+                <p className="text-sm text-slate-400 mb-2">Sign in to access your downloads</p>
+                <div className="flex gap-2">
+                  <NavLink to="/login" className="flex-1 btn-primary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
+                    Sign In
+                  </NavLink>
+                  <NavLink to="/register" className="flex-1 btn-secondary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
+                    Register
+                  </NavLink>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Navigation Links */}
             <nav className="space-y-1">
               <NavLink to="/" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
                 <Home size={20} /> Home
               </NavLink>
-
               {categories.map((cat) => (
                 <NavLink key={cat.slug} to={`/category/${cat.slug}`} className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
                   <cat.icon size={20} className={cat.color} /> {cat.label}
                 </NavLink>
               ))}
-
-              <div className="border-t border-white/5 my-2 pt-2">
-                {isLoggedIn && (
-                  <>
-                    <NavLink to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                      <Settings size={20} /> Profile Settings
-                    </NavLink>
-                    <NavLink to="/downloads" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                      <Download size={20} /> My Downloads
-                    </NavLink>
-                    <NavLink to="/favorites" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                      <Heart size={20} /> Favorites
-                    </NavLink>
-                    <button
-                      onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-left"
-                    >
-                      <LogIn size={20} /> Logout
-                    </button>
-                  </>
-                )}
-              </div>
             </nav>
 
             <div className="absolute bottom-6 left-6 right-6 border-t border-white/5 pt-4">
@@ -214,12 +178,11 @@ export default function Layout() {
         </div>
       )}
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-4">
         <Outlet />
       </main>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-dark-card/95 backdrop-blur-xl border-t border-white/5 md:hidden">
         <div className="flex items-center justify-around py-2">
           <NavLink to="/" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
@@ -241,7 +204,6 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* Footer */}
       <footer className="border-t border-white/5 bg-dark-card/50 mt-8 pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-text-secondary">
           <div className="flex items-center gap-2">
