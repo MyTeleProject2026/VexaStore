@@ -1,16 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/database');  // ✅ Make sure this is correct
+const { pool } = require('../config/database');
 
-// ============================================================
-// GET: All categories
-// ============================================================
 router.get('/', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, name, slug, icon, sort_order, is_active 
-       FROM categories 
-       WHERE is_active = 1 
+      `SELECT id, name, slug, icon, sort_order, is_active
+       FROM categories
+       WHERE is_active = 1
        ORDER BY sort_order ASC, name ASC`
     );
     res.json({ success: true, data: rows });
@@ -19,9 +16,6 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// GET: Single category by slug
-// ============================================================
 router.get('/:slug', async (req, res, next) => {
   try {
     const { slug } = req.params;
@@ -38,14 +32,11 @@ router.get('/:slug', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// GET: Apps by category
-// ============================================================
 router.get('/:slug/apps', async (req, res, next) => {
   try {
     const { slug } = req.params;
     const { limit = 20, offset = 0 } = req.query;
-    
+
     const [rows] = await pool.query(
       `SELECT a.*,
         (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 LIMIT 1) as latest_version
@@ -56,7 +47,7 @@ router.get('/:slug/apps', async (req, res, next) => {
        LIMIT ? OFFSET ?`,
       [slug, Number(limit), Number(offset)]
     );
-    
+
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
