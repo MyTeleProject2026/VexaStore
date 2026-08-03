@@ -17,6 +17,10 @@ const maintenanceRoutes = require('./routes/maintenance');
 // ✅ ADD: Auth Routes
 // ============================================================
 const authRoutes = require('./routes/auth');
+// ============================================================
+// ✅ ADD: Settings Routes
+// ============================================================
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -88,6 +92,10 @@ app.use('/api/maintenance', maintenanceRoutes);
 // ✅ ADD: Auth Routes (AFTER app = express())
 // ============================================================
 app.use('/api/auth', authRoutes);
+// ============================================================
+// ✅ ADD: Settings Routes (AFTER app = express())
+// ============================================================
+app.use('/api/admin/settings', settingsRoutes);
 
 // ============================================================
 // Health Check
