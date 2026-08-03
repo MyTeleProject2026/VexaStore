@@ -8,15 +8,27 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const storage = new CloudinaryStorage({
+// ✅ Storage for images (icons, screenshots, logos)
+const imageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'vexastore',
+    folder: 'vexastore/images',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'svg'],
-    resource_type: 'auto',
+    resource_type: 'image',
   },
 });
 
-const upload = multer({ storage });
+// ✅ Storage for app files (APK, IPA, EXE, DMG, etc.)
+const appFileStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'vexastore/apps',
+    allowed_formats: ['apk', 'ipa', 'exe', 'dmg', 'deb', 'rpm', 'zip', 'msi'],
+    resource_type: 'raw',  // ✅ Important for non-image files
+  },
+});
 
-module.exports = { cloudinary, upload };
+const imageUpload = multer({ storage: imageStorage });
+const appFileUpload = multer({ storage: appFileStorage });
+
+module.exports = { cloudinary, imageUpload, appFileUpload };
