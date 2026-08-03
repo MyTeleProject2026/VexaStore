@@ -15,7 +15,6 @@ export default function Users() {
   async function loadUsers() {
     try {
       setLoading(true);
-      // ✅ UPDATED: Use getUsers()
       const res = await api.getUsers();
       setUsers(res.data?.data || []);
     } catch (err) {
@@ -27,7 +26,6 @@ export default function Users() {
 
   async function toggleStatus(id, currentStatus) {
     try {
-      // ✅ UPDATED: Use updateUser()
       await api.updateUser(id, { is_active: currentStatus ? 0 : 1 });
       showSuccess('User status updated');
       loadUsers();
@@ -39,7 +37,6 @@ export default function Users() {
   async function deleteUser(id) {
     if (!confirm('Delete this user?')) return;
     try {
-      // ✅ UPDATED: Use deleteUser()
       await api.deleteUser(id);
       showSuccess('User deleted');
       loadUsers();
