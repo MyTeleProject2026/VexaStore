@@ -12,7 +12,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'vexastore',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'svg', 'pdf', 'html', 'txt'],
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'svg'],
     resource_type: 'auto',
   },
 });
