@@ -10,6 +10,8 @@ export default function DownloadButton({ version, appId, appSlug }) {
   const handleDownload = async () => {
     try {
       setDownloading(true);
+      
+      // ✅ Track download for analytics
       await appApi.trackDownload({
         app_id: appId,
         version_id: version.id,
@@ -17,9 +19,13 @@ export default function DownloadButton({ version, appId, appSlug }) {
         user_agent: navigator.userAgent,
         country: 'US',
       });
+      
       showSuccess(`Downloading ${version.os} version...`);
+      
+      // ✅ DIRECT DOWNLOAD – opens the file URL
       const fileUrl = `${import.meta.env.VITE_API_BASE_URL}${version.file_url}`;
       window.open(fileUrl, '_blank');
+      
     } catch (err) {
       showError('Download failed. Please try again.');
     } finally {
