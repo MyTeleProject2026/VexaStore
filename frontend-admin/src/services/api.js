@@ -93,7 +93,7 @@ export const api = {
   getCategories: () => adminApi.get('/api/categories'),
 
   // ============================================================
-  // ✅ ADD: Admin Settings Routes
+  // ✅ Admin Settings Routes
   // ============================================================
   
   // Categories (admin)
@@ -102,29 +102,23 @@ export const api = {
   updateCategory: (id, data) => adminApi.put(`/api/admin/settings/categories/${id}`, data),
   deleteCategory: (id) => adminApi.delete(`/api/admin/settings/categories/${id}`),
 
-  // News
+  // News - ✅ FIXED: Handles both FormData and JSON
   getNews: () => adminApi.get('/api/admin/settings/news'),
   createNews: (data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) {
-        formData.append(key, data[key]);
-      }
-    });
-    return adminApi.post('/api/admin/settings/news', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    if (data instanceof FormData) {
+      return adminApi.post('/api/admin/settings/news', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return adminApi.post('/api/admin/settings/news', data);
   },
   updateNews: (id, data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) {
-        formData.append(key, data[key]);
-      }
-    });
-    return adminApi.put(`/api/admin/settings/news/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    if (data instanceof FormData) {
+      return adminApi.put(`/api/admin/settings/news/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return adminApi.put(`/api/admin/settings/news/${id}`, data);
   },
   deleteNews: (id) => adminApi.delete(`/api/admin/settings/news/${id}`),
 
