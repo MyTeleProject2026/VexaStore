@@ -86,7 +86,6 @@ export default function Maintenance() {
         </div>
       </div>
 
-      {/* Status Card */}
       <div className={`glass-card p-6 ${settings.is_enabled ? 'border-amber-500/30' : ''}`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -129,7 +128,6 @@ export default function Maintenance() {
         </div>
       </div>
 
-      {/* Settings Card */}
       <div className="glass-card p-6 space-y-4">
         <h3 className="text-lg font-semibold text-white">Maintenance Settings</h3>
         
@@ -165,7 +163,6 @@ export default function Maintenance() {
         </button>
       </div>
 
-      {/* Preview Card */}
       <div className="glass-card p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Preview</h3>
         <div className="bg-dark-bg rounded-xl p-6 border border-dark-border">
