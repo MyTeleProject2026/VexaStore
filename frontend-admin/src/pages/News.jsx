@@ -54,13 +54,9 @@ export default function News() {
     }
   };
 
-  // ============================================================
-  // ✅ FINAL FIXED: Sends content as JSON (not FormData)
-  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate
     if (!form.title.trim()) {
       showError('Title is required');
       return;
@@ -74,7 +70,6 @@ export default function News() {
       return;
     }
 
-    // Content length check (LONGTEXT supports up to 4GB)
     if (form.content.length > 4000000) {
       showError('Content is too large (max 4MB). Please reduce the size.');
       return;
@@ -83,25 +78,19 @@ export default function News() {
     try {
       setSubmitting(true);
       
-      // ✅ Build data object with full HTML content
       const data = {
         title: form.title.trim(),
         slug: form.slug.trim(),
-        content: form.content.trim(), // Full HTML content
+        content: form.content.trim(),
         is_featured: form.is_featured,
         is_published: form.is_published
       };
 
-      // ✅ LOG: Check what we're sending
-      console.log('📤 Sending article data:', {
+      console.log('📤 Sending article:', {
         title: data.title,
-        slug: data.slug,
-        contentLength: data.content.length,
-        is_featured: data.is_featured,
-        is_published: data.is_published
+        contentLength: data.content.length
       });
 
-      // ✅ If there's an image, send as FormData with the image
       if (form.image instanceof File) {
         const formData = new FormData();
         formData.append('title', data.title);
@@ -117,7 +106,6 @@ export default function News() {
           await api.createNews(formData);
         }
       } else {
-        // ✅ No image: send as JSON (supports any size)
         if (editing) {
           await api.updateNews(editing, data);
         } else {
@@ -132,9 +120,7 @@ export default function News() {
       loadArticles();
     } catch (err) {
       console.error('❌ Submit error:', err);
-      // Show detailed error
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to save article';
-      showError(errorMsg);
+      showError(getApiErrorMessage(err) || 'Failed to save article');
     } finally {
       setSubmitting(false);
     }
@@ -212,118 +198,3 @@ export default function News() {
                   setShowModal(true);
                 }}
                 className="p-2 rounded-lg hover:bg-white/5 text-text-secondary hover:text-white transition"
-              >
-                <Edit size={16} />
-              </button>
-              <button
-                onClick={() => handleDelete(article.id)}
-                className="p-2 rounded-lg hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {articles.length === 0 && (
-        <div className="glass-card p-8 text-center text-text-secondary">
-          <Newspaper size={48} className="mx-auto text-text-secondary/30 mb-4" />
-          <p>No articles yet. Create your first announcement!</p>
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
-          <div className="glass-card max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">{editing ? 'Edit' : 'Add'} Article</h2>
-              <button onClick={() => setShowModal(false)} className="text-text-secondary hover:text-white">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="input-label">Title *</label>
-                <input
-                  className="input-field"
-                  value={form.title}
-                  onChange={e => setForm({...form, title: e.target.value, slug: generateSlug(e.target.value)})}
-                  placeholder="Enter article title"
-                  required
-                />
-              </div>
-              <div>
-                <label className="input-label">Slug *</label>
-                <input
-                  className="input-field"
-                  value={form.slug}
-                  onChange={e => setForm({...form, slug: e.target.value})}
-                  placeholder="article-slug"
-                  required
-                />
-              </div>
-              <div>
-                <label className="input-label">Content (HTML) *</label>
-                <div className="text-xs text-text-secondary mb-1">
-                  Supports any HTML content. Full page HTML allowed.
-                </div>
-                <textarea
-                  className="input-field min-h-[250px] font-mono text-sm"
-                  value={form.content}
-                  onChange={e => setForm({...form, content: e.target.value})}
-                  placeholder="<h1>Your content here</h1>"
-                  required
-                />
-                <div className="text-xs text-text-secondary mt-1">
-                  Characters: {form.content.length.toLocaleString()}
-                </div>
-              </div>
-              <div>
-                <label className="input-label">Image</label>
-                <div className="flex items-center gap-4">
-                  {form.image_preview && (
-                    <img src={form.image_preview} alt="Preview" className="h-20 w-auto rounded-lg object-cover" />
-                  )}
-                  <label className="btn-secondary cursor-pointer">
-                    <Upload size={16} className="inline mr-2" /> Upload Image
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 text-sm text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={form.is_featured === 1}
-                    onChange={e => setForm({...form, is_featured: e.target.checked ? 1 : 0})}
-                    className="w-4 h-4 accent-accent-primary"
-                  />
-                  Featured
-                </label>
-                <label className="flex items-center gap-2 text-sm text-text-secondary">
-                  <input
-                    type="checkbox"
-                    checked={form.is_published === 1}
-                    onChange={e => setForm({...form, is_published: e.target.checked ? 1 : 0})}
-                    className="w-4 h-4 accent-accent-primary"
-                  />
-                  Published
-                </label>
-              </div>
-              <div className="flex gap-3 pt-4 border-t border-dark-border">
-                <button type="submit" disabled={submitting} className="btn-primary flex-1">
-                  {submitting ? 'Saving...' : (editing ? 'Update' : 'Create')}
-                </button>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
