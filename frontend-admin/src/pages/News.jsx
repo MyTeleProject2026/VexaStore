@@ -54,7 +54,9 @@ export default function News() {
     }
   };
 
-  // ✅ FIXED: Handle form submission with full HTML content
+  // ============================================================
+  // ✅ FINAL FIXED: Sends content as JSON (not FormData)
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -72,7 +74,7 @@ export default function News() {
       return;
     }
 
-    // Content length check
+    // Content length check (LONGTEXT supports up to 4GB)
     if (form.content.length > 4000000) {
       showError('Content is too large (max 4MB). Please reduce the size.');
       return;
@@ -81,14 +83,23 @@ export default function News() {
     try {
       setSubmitting(true);
       
-      // ✅ Build data object
+      // ✅ Build data object with full HTML content
       const data = {
         title: form.title.trim(),
         slug: form.slug.trim(),
-        content: form.content.trim(),
+        content: form.content.trim(), // Full HTML content
         is_featured: form.is_featured,
         is_published: form.is_published
       };
+
+      // ✅ LOG: Check what we're sending
+      console.log('📤 Sending article data:', {
+        title: data.title,
+        slug: data.slug,
+        contentLength: data.content.length,
+        is_featured: data.is_featured,
+        is_published: data.is_published
+      });
 
       // ✅ If there's an image, send as FormData with the image
       if (form.image instanceof File) {
@@ -120,8 +131,10 @@ export default function News() {
       setForm({ title: '', slug: '', content: '', is_featured: 0, is_published: 1, image: null, image_preview: null });
       loadArticles();
     } catch (err) {
-      console.error('Submit error:', err);
-      showError(getApiErrorMessage(err) || 'Failed to save article');
+      console.error('❌ Submit error:', err);
+      // Show detailed error
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to save article';
+      showError(errorMsg);
     } finally {
       setSubmitting(false);
     }
