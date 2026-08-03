@@ -119,15 +119,19 @@ router.get('/news/:slug', async (req, res, next) => {
 router.post('/news', authAdmin, upload.single('image'), async (req, res, next) => {
   try {
     const { title, slug, content, is_featured, is_published } = req.body;
+    
     if (!title || !slug || !content) {
       return res.status(400).json({ success: false, message: 'Title, slug, content required' });
     }
+    
+    // ✅ No truncation – store full content
     const image_url = req.file ? req.file.path : null;
     const [result] = await pool.query(
       `INSERT INTO news_articles (title, slug, content, image_url, is_featured, is_published, published_at)
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [title, slug, content, image_url, is_featured || 0, is_published !== undefined ? is_published : 1]
     );
+    
     res.json({ success: true, data: { id: result.insertId } });
   } catch (error) {
     next(error);
