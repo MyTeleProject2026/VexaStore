@@ -21,7 +21,7 @@ const OS_ICONS = {
 };
 
 export default function Versions() {
-  const { id } = useParams();
+  const { id } = useParams();  // ✅ This is the app_id
   const [app, setApp] = useState(null);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function Versions() {
   const { showSuccess, showError } = useNotification();
   
   const [form, setForm] = useState({
-    app_id: id,
+    app_id: id,  // ✅ Set app_id from URL params
     version: '',
     os: 'android',
     release_notes: '',
@@ -40,7 +40,9 @@ export default function Versions() {
   });
 
   useEffect(() => {
-    loadApp();
+    if (id) {
+      loadApp();
+    }
   }, [id]);
 
   async function loadApp() {
@@ -63,23 +65,39 @@ export default function Versions() {
     }
   };
 
+  // ✅ FIXED: handleAddVersion with proper validation
   const handleAddVersion = async (e) => {
     e.preventDefault();
-    if (!form.version || !form.os || !form.file) {
-      showError('Please fill in all required fields');
+    
+    console.log('📤 Form data:', {
+      app_id: form.app_id,
+      version: form.version,
+      os: form.os,
+      release_notes: form.release_notes,
+      is_latest: form.is_latest,
+      file: form.file ? form.file.name : 'No file'
+    });
+    
+    if (!form.app_id || !form.version || !form.os || !form.file) {
+      showError('app_id, version, os, and file are required');
       return;
     }
 
     try {
       setSubmitting(true);
       const data = new FormData();
-      Object.keys(form).forEach(key => {
-        if (key === 'file' && form[key]) {
-          data.append(key, form[key]);
-        } else if (form[key] !== undefined && form[key] !== null) {
-          data.append(key, form[key]);
-        }
-      });
+      data.append('app_id', form.app_id);
+      data.append('version', form.version.trim());
+      data.append('os', form.os);
+      data.append('release_notes', form.release_notes || '');
+      data.append('is_latest', String(form.is_latest));
+      data.append('file', form.file);
+
+      // Debug: Log FormData
+      console.log('📤 Sending version data:');
+      for (let [key, value] of data.entries()) {
+        console.log(`  ${key}: ${value instanceof File ? value.name : value}`);
+      }
 
       await api.addVersion(data);
       showSuccess('Version added successfully!');
@@ -87,6 +105,7 @@ export default function Versions() {
       setForm({ app_id: id, version: '', os: 'android', release_notes: '', is_latest: 1, file: null });
       loadApp();
     } catch (err) {
+      console.error('❌ Add version error:', err);
       showError(getApiErrorMessage(err));
     } finally {
       setSubmitting(false);
@@ -124,7 +143,7 @@ export default function Versions() {
       <div className="glass-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">{app?.name} — Versions</h1>
+            <h1 className="text-2xl font-bold text-white">{app?.name || 'App'} — Versions</h1>
             <p className="text-text-secondary">Manage app versions for all platforms</p>
           </div>
           <button
@@ -136,7 +155,6 @@ export default function Versions() {
         </div>
       </div>
 
-      {/* Add Version Form */}
       {showAddForm && (
         <form onSubmit={handleAddVersion} className="glass-card p-6 space-y-4">
           <h3 className="text-lg font-semibold text-white">New Version</h3>
@@ -209,12 +227,10 @@ export default function Versions() {
         </form>
       )}
 
-      {/* Versions List */}
       {versions.length > 0 ? (
         <div className="space-y-3">
           {versions.map((v) => {
             const Icon = OS_ICONS[v.os] || Smartphone;
-            // ✅ File URL from Cloudinary
             const fileUrl = v.file_url;
             return (
               <div key={v.id} className="glass-card p-4 flex flex-wrap items-center justify-between gap-3">
