@@ -43,7 +43,7 @@ function AppContent() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-dark-bg">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 asborder-accent-primaryent rounded-full animate-spin mx-auto"></div>
+          <div className="w-16 h-16 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="mt-4 text-text-secondary">Loading VexaStore...</p>
         </div>
       </div>
