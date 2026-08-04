@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
-  Search, Menu, X, Download, Smartphone, Apple, Monitor, Terminal, 
+  Search, Menu, X, Download, Smartphone, Phone, Monitor, Laptop, Terminal, 
   Home, User, LogIn, UserPlus, Settings, Heart, Clock, Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -41,11 +41,12 @@ export default function Layout() {
     navigate('/');
   };
 
+  // ✅ Replaced Apple with Phone for iOS and Laptop for macOS
   const categories = [
-    { slug: 'ios', label: 'iOS', icon: Apple, color: 'text-blue-400' },
+    { slug: 'ios', label: 'iOS', icon: Phone, color: 'text-blue-400' },
     { slug: 'android', label: 'Android', icon: Smartphone, color: 'text-green-400' },
     { slug: 'windows', label: 'Windows', icon: Monitor, color: 'text-cyan-400' },
-    { slug: 'macos', label: 'macOS', icon: Apple, color: 'text-purple-400' },
+    { slug: 'macos', label: 'macOS', icon: Laptop, color: 'text-purple-400' },
     { slug: 'linux', label: 'Linux', icon: Terminal, color: 'text-amber-400' },
   ];
 
