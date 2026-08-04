@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// ✅ Create axios instance with base URL
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -23,32 +24,32 @@ export const getApiErrorMessage = (err) => {
 };
 
 // ============================================================
-// ✅ ADD: Auth API methods
+// ✅ Auth API (all paths now include /api)
 // ============================================================
 export const authApi = {
-  login: (data) => api.post('/auth/login', data),
-  register: (data) => api.post('/auth/register', data),
-  verifyOtp: (data) => api.post('/auth/verify-otp', data),
-  resendOtp: (data) => api.post('/auth/resend-otp', data),
-  googleLogin: (data) => api.post('/auth/google', data),
+  login: (data) => api.post('/api/auth/login', data),
+  register: (data) => api.post('/api/auth/register', data),
+  verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
+  resendOtp: (data) => api.post('/api/auth/resend-otp', data),
+  googleLogin: (data) => api.post('/api/auth/google', data),
 };
 
 // ============================================================
-// App API methods
+// ✅ App API (all paths now include /api)
 // ============================================================
 export const appApi = {
-  getApps: (params = {}) => api.get('/apps', { params }),
-  getApp: (slug) => api.get(`/apps/${slug}`),
-  getAppVersions: (slug, os) => api.get(`/apps/${slug}/versions/${os}`),
-  getCategories: () => api.get('/categories'),
-  trackDownload: (data) => api.post('/downloads/track', data),
+  getApps: (params = {}) => api.get('/api/apps', { params }),
+  getApp: (slug) => api.get(`/api/apps/${slug}`),
+  getAppVersions: (slug, os) => api.get(`/api/apps/${slug}/versions/${os}`),
+  getCategories: () => api.get('/api/categories'),
+  trackDownload: (data) => api.post('/api/downloads/track', data),
 };
 
+// ============================================================
+// ✅ Maintenance API
+// ============================================================
 export const maintenanceApi = {
-  getStatus: () => api.get('/maintenance/status'),
+  getStatus: () => api.get('/api/maintenance/status'),
 };
 
-// ============================================================
-// ✅ Default export for backward compatibility
-// ============================================================
 export default api;
