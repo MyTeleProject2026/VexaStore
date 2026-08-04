@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Apple, Monitor, Terminal } from 'lucide-react';
+import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal } from 'lucide-react';
 import DownloadButton from '../components/DownloadButton';
 
 const OS_ICONS = {
