@@ -12,8 +12,6 @@ import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
 import Profile from './pages/Profile';
 import Downloads from './pages/Downloads';
-import Register from './pages/Register';
-import VerifyOtp from './pages/VerifyOtp';
 import { NotificationProvider, useNotification } from './hooks/useNotification';
 
 function AppContent() {
