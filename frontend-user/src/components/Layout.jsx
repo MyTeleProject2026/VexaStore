@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
   Search, Menu, X, Download, Smartphone, Phone, Monitor, Laptop, Terminal, 
-  Home, User, LogIn, UserPlus, Settings, Heart, Clock, Zap
+  Home, User, LogIn, Settings, Heart, Clock, Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+// ... rest of Layout (categories should use Phone and Laptop)
 export default function Layout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
