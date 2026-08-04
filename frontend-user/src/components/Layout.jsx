@@ -4,9 +4,7 @@ import {
   Home, User, LogIn, Settings, Heart, Clock, Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { ReactComponent as Logo } from '../assets/vexastore-icon.svg';
 
-// ... rest of Layout (categories should use Phone and Laptop)
 export default function Layout() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,7 +41,6 @@ export default function Layout() {
     navigate('/');
   };
 
-  // ✅ Replaced Apple with Phone for iOS and Laptop for macOS
   const categories = [
     { slug: 'ios', label: 'iOS', icon: Phone, color: 'text-blue-400' },
     { slug: 'android', label: 'Android', icon: Smartphone, color: 'text-green-400' },
@@ -57,9 +54,13 @@ export default function Layout() {
       {/* Top Bar */}
       <header className="sticky top-0 z-40 bg-dark-card/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
         <div className="px-4 py-2 flex items-center justify-between gap-2">
+          {/* ✅ LOGO – using <img> from public folder */}
           <NavLink to="/" className="flex items-center gap-2 flex-shrink-0">
-            <Logo className="w-8 h-8" />
-            </div>
+            <img 
+              src="/vexastore-icon.svg" 
+              alt="VexaStore" 
+              className="w-8 h-8" 
+            />
             <div>
               <span className="text-lg font-bold gradient-text">VexaStore</span>
             </div>
