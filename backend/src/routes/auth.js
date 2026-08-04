@@ -272,8 +272,9 @@ router.post('/reset-password', async (req, res, next) => {
     connection.release();
   }
 });
+
 // ============================================================
-// POST: Google Login
+// POST: Google Login (Using Frontend-issued token)
 // ============================================================
 router.post('/google', async (req, res, next) => {
   try {
@@ -282,37 +283,56 @@ router.post('/google', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing Google data' });
     }
 
-    let [rows] = await pool.query('SELECT * FROM store_users WHERE google_id = ? OR email = ?', [google_id, email]);
+    // Check if user exists with this google_id or email
+    let [rows] = await pool.query(
+      'SELECT * FROM store_users WHERE google_id = ? OR email = ?',
+      [google_id, email.trim().toLowerCase()]
+    );
     let user;
     if (rows.length) {
       user = rows[0];
+      // If found by email but no google_id, link the account
       if (!user.google_id) {
-        await pool.query('UPDATE store_users SET google_id = ? WHERE id = ?', [google_id, user.id]);
+        await pool.query(
+          'UPDATE store_users SET google_id = ? WHERE id = ?',
+          [google_id, user.id]
+        );
         user.google_id = google_id;
       }
     } else {
+      // Create new user with Google info
       const [result] = await pool.query(
-        `INSERT INTO store_users (email, name, google_id, is_verified) VALUES (?, ?, ?, 1)`,
-        [email, name || email.split('@')[0], google_id]
+        `INSERT INTO store_users (email, name, google_id, is_verified) 
+         VALUES (?, ?, ?, 1)`,
+        [email.trim().toLowerCase(), name || email.split('@')[0], google_id]
       );
-      const [newUser] = await pool.query('SELECT * FROM store_users WHERE id = ?', [result.insertId]);
+      const [newUser] = await pool.query(
+        'SELECT * FROM store_users WHERE id = ?',
+        [result.insertId]
+      );
       user = newUser[0];
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: 'user' },
-      JWT_SECRET,
+      process.env.JWT_SECRET || 'your-secret',
       { expiresIn: '7d' }
     );
 
     res.json({
       success: true,
       token,
-      user: { id: user.id, email: user.email, name: user.name }
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        is_verified: user.is_verified,
+        google_id: user.google_id
+      }
     });
   } catch (error) {
     next(error);
   }
 });
-
 module.exports = router;
