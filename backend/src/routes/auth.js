@@ -162,6 +162,117 @@ router.post('/login', async (req, res, next) => {
 });
 
 // ============================================================
+// POST: Forgot Password – Send reset link
+// ============================================================
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const [rows] = await pool.query(
+      'SELECT id, email FROM store_users WHERE email = ?',
+      [email.trim().toLowerCase()]
+    );
+
+    if (!rows.length) {
+      // For security, don't reveal if email exists
+      return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
+    }
+
+    const user = rows[0];
+    const resetToken = jwt.sign(
+      { id: user.id, email: user.email, purpose: 'password_reset' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Store token in a new table (or reuse otp_codes with purpose='password_reset')
+    await pool.query(
+      `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) 
+       VALUES (?, ?, 'password_reset', DATE_ADD(NOW(), INTERVAL 1 HOUR))
+       ON DUPLICATE KEY UPDATE otp_code = VALUES(otp_code), expires_at = VALUES(expires_at)`,
+      [user.id, resetToken]
+    );
+
+    const resetLink = `${process.env.FRONTEND_USER_URL || 'https://vexastore.onrender.com'}/reset-password?token=${resetToken}`;
+    
+    // Send email
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
+        <h2 style="margin:0 0 16px;">Reset Your Password</h2>
+        <p style="margin:0 0 16px;">Click the link below to reset your password. This link expires in 1 hour.</p>
+        <a href="${resetLink}" style="display: inline-block; background: #06b6d4; color: #000000; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: bold; margin: 16px 0;">
+          Reset Password
+        </a>
+        <p style="margin:16px 0 0; color:#cbd5e1;">If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+
+    await sendEmail({ to: email, subject: 'VexaStore Password Reset', html });
+
+    res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Reset Password – Verify token and update password
+// ============================================================
+router.post('/reset-password', async (req, res, next) => {
+  const connection = await pool.getConnection();
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token and new password required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    if (decoded.purpose !== 'password_reset') {
+      return res.status(400).json({ success: false, message: 'Invalid token purpose' });
+    }
+
+    const [otpRows] = await connection.query(
+      `SELECT id FROM otp_codes WHERE user_id = ? AND otp_code = ? AND purpose = 'password_reset' AND is_used = 0 AND expires_at > NOW()`,
+      [decoded.id, token]
+    );
+    if (!otpRows.length) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    // Update password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await connection.query(
+      'UPDATE store_users SET password = ? WHERE id = ?',
+      [hashed, decoded.id]
+    );
+
+    // Mark token as used
+    await connection.query(
+      'UPDATE otp_codes SET is_used = 1 WHERE id = ?',
+      [otpRows[0].id]
+    );
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    next(error);
+  } finally {
+    connection.release();
+  }
+});
+// ============================================================
 // POST: Google Login
 // ============================================================
 router.post('/google', async (req, res, next) => {
