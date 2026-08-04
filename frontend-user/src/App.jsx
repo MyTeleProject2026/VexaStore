@@ -24,7 +24,8 @@ function AppContent() {
 
   async function checkMaintenance() {
     try {
-      const res = await api.get('/maintenance/status');
+      // ✅ FIXED: Added '/api' prefix
+      const res = await api.get('/api/maintenance/status');
       if (res.data?.success) {
         setMaintenance({
           isEnabled: res.data.data.is_enabled,
@@ -42,7 +43,6 @@ function AppContent() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-dark-bg">
         <div className="text-center">
-          {/* ✅ Fixed typo here */}
           <div className="w-16 h-16 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="mt-4 text-text-secondary">Loading VexaStore...</p>
         </div>
