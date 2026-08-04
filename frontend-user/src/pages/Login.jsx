@@ -28,7 +28,8 @@ export default function Login() {
         navigate('/');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Login failed');
+      const msg = err.response?.data?.message || 'Login failed';
+      showError(msg);
     } finally {
       setLoading(false);
     }
@@ -59,6 +60,11 @@ export default function Login() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-xs text-cyan-400 hover:underline">
+              Forgot Password?
+            </Link>
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full py-3 flex justify-center">
             {loading ? 'Logging in...' : 'Sign In'}
