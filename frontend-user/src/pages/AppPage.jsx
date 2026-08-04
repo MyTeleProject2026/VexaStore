@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal } from 'lucide-react';
 import DownloadButton from '../components/DownloadButton';
+import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal } from 'lucide-react';
 
 const OS_ICONS = {
   ios: Phone,
@@ -12,6 +12,7 @@ const OS_ICONS = {
   macos: Laptop,
   linux: Terminal,
 };
+
 export default function AppPage() {
   const { slug } = useParams();
   const [app, setApp] = useState(null);
