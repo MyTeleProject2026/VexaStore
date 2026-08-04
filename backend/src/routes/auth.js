@@ -40,7 +40,13 @@ router.post('/register', async (req, res, next) => {
       [result.insertId, otp, expiresAt]
     );
 
-    await sendOtpEmail(email, otp);
+    // ✅ Attempt to send email, but don't fail if it errors
+    try {
+      await sendOtpEmail(email, otp);
+    } catch (emailError) {
+      console.error('❌ Failed to send OTP email:', emailError.message);
+      // Still return success – user can resend OTP later
+    }
 
     res.json({ success: true, message: 'Registration successful. Please verify your email with OTP.' });
   } catch (error) {
