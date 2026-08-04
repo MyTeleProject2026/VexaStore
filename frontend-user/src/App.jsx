@@ -1,5 +1,3 @@
-import { ReactComponent as Logo } from './vexastore-icon.svg';
-// Then use <Logo className="w-10 h-10" />
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
