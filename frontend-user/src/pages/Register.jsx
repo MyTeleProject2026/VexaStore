@@ -16,8 +16,6 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validation
     if (!name || !email || !password) {
       showError('Please fill all fields');
       return;
@@ -30,27 +28,21 @@ export default function Register() {
       showError('Password must be at least 6 characters');
       return;
     }
-
     try {
       setLoading(true);
       const res = await authApi.register({ name, email, password });
-      
       if (res.data?.success) {
         showSuccess('Registration successful! Please verify your email.');
-        // Redirect to OTP verification page with email
         navigate('/verify-otp', { state: { email } });
       }
     } catch (err) {
-      // Handle specific error codes
       const status = err.response?.status;
       let msg = err.response?.data?.message || 'Registration failed';
-      
       if (status === 409) {
         msg = 'Email already registered. Please login instead.';
       } else if (status === 500) {
         msg = 'Server error. Please try again later.';
       }
-      
       showError(msg);
     } finally {
       setLoading(false);
@@ -125,11 +117,7 @@ export default function Register() {
               />
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full py-3 flex justify-center"
-          >
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3 flex justify-center">
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
