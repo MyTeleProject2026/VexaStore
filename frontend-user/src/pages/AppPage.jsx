@@ -6,13 +6,12 @@ import { ChevronLeft, Download, Star, ExternalLink, Smartphone, Apple, Monitor, 
 import DownloadButton from '../components/DownloadButton';
 
 const OS_ICONS = {
-  ios: Apple,
+  ios: Phone,
   android: Smartphone,
   windows: Monitor,
-  macos: Apple,
+  macos: Laptop,
   linux: Terminal,
 };
-
 export default function AppPage() {
   const { slug } = useParams();
   const [app, setApp] = useState(null);
