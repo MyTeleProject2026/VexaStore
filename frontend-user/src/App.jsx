@@ -79,7 +79,8 @@ function AppContent() {
 }
 
 function App() {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com';
+  // Use the environment variable for Google Client ID
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <NotificationProvider>
