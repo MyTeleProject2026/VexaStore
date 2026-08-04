@@ -1,4 +1,5 @@
-import { Smartphone, Phone, Monitor, Terminal, AppWindow } from 'lucide-react';
+import { Smartphone, Phone, Monitor, Laptop, Terminal, AppWindow } from 'lucide-react';
+
 const OS_OPTIONS = [
   { value: 'ios', label: 'iOS', icon: Phone },
   { value: 'android', label: 'Android', icon: Smartphone },
