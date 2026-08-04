@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
 import { authApi } from '../services/api';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,6 +12,34 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { showSuccess, showError } = useNotification();
+
+  // Google OAuth
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Fetch user info from Google
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+        }).then(res => res.json());
+        
+        // Send to backend
+        const res = await authApi.googleLogin({
+          google_id: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name || userInfo.email.split('@')[0]
+        });
+        if (res.data?.success) {
+          localStorage.setItem('vexastore_user_token', res.data.token);
+          localStorage.setItem('vexastore_user', JSON.stringify(res.data.user));
+          showSuccess('Login successful');
+          navigate('/');
+        }
+      } catch (err) {
+        showError('Google login failed: ' + (err.response?.data?.message || err.message));
+      }
+    },
+    onError: () => showError('Google login failed'),
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,15 +77,31 @@ export default function Login() {
             <label className="input-label">Email</label>
             <div className="relative">
               <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <input type="email" className="input-field pl-10" value={email} onChange={e => setEmail(e.target.value)} required />
+              <input
+                type="email"
+                className="input-field pl-10"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div>
             <label className="input-label">Password</label>
             <div className="relative">
               <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <input type={showPassword ? 'text' : 'password'} className="input-field pl-10 pr-12" value={password} onChange={e => setPassword(e.target.value)} required />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" onClick={() => setShowPassword(!showPassword)}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="input-field pl-10 pr-12"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                onClick={() => setShowPassword(!showPassword)}
+              >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
@@ -74,7 +119,7 @@ export default function Login() {
           Don't have an account? <Link to="/register" className="text-cyan-400 hover:underline">Register</Link>
         </p>
         <div className="mt-6 text-center">
-          <button className="btn-secondary w-full flex items-center justify-center gap-2 py-2">
+          <button onClick={googleLogin} className="btn-secondary w-full flex items-center justify-center gap-2 py-2">
             <svg className="w-5 h-5" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
               <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
