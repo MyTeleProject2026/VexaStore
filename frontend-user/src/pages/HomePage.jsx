@@ -6,10 +6,9 @@ import FeaturedApps from '../components/FeaturedApps';
 import OSFilter from '../components/OSFilter';
 import StatsCard from '../components/StatsCard';
 import { 
-  Download, Smartphone, Laptop, TrendingUp, Award, 
-  Zap, Shield, Sparkles, ArrowRight, Play, Star, 
-  Clock, CheckCircle 
-} from 'lucide-react';
+  Download, Smartphone, Phone, Monitor, Laptop, Terminal, TrendingUp, Award, 
+  Zap, Shield, Sparkles, ArrowRight, Star, Clock
+} from 'lucide-react';  // ← Added Phone, Laptop, removed Apple
 import { Link } from 'react-router-dom';
 
 export default function HomePage() {
@@ -58,7 +57,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Hero Section - Mobile First */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0a0e1a] to-[#050812] border border-white/5 p-5 md:p-8">
         <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl"></div>
@@ -85,10 +84,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Quick Categories - Mobile */}
+      {/* Quick Categories – ✅ FIXED: replaced Apple with Phone and Laptop */}
       <div className="grid grid-cols-5 gap-2">
         <Link to="/category/ios" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
-          <Apple size={24} className="text-blue-400" />
+          <Phone size={24} className="text-blue-400" />  {/* ← Fixed */}
           <span className="text-[10px] text-slate-400">iOS</span>
         </Link>
         <Link to="/category/android" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
@@ -100,7 +99,7 @@ export default function HomePage() {
           <span className="text-[10px] text-slate-400">Windows</span>
         </Link>
         <Link to="/category/macos" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
-          <Apple size={24} className="text-purple-400" />
+          <Laptop size={24} className="text-purple-400" />  {/* ← Fixed */}
           <span className="text-[10px] text-slate-400">macOS</span>
         </Link>
         <Link to="/category/linux" className="flex flex-col items-center gap-1 p-3 rounded-2xl bg-dark-card/50 border border-white/5 hover:border-cyan-500/20 transition">
@@ -109,7 +108,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* Stats - Mobile Friendly */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <StatsCard label="Total Apps" value={apps.length} icon={Download} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
         <StatsCard label="Platforms" value="5" icon={Laptop} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
@@ -131,7 +130,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Top Downloads - New Section */}
+      {/* Top Downloads */}
       {apps.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
