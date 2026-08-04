@@ -12,6 +12,8 @@ import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
 import Profile from './pages/Profile';
 import Downloads from './pages/Downloads';
+import Register from './pages/Register';
+import VerifyOtp from './pages/VerifyOtp';
 import { NotificationProvider, useNotification } from './hooks/useNotification';
 
 function AppContent() {
@@ -63,6 +65,7 @@ function AppContent() {
           <Route path="app/:slug" element={<AppPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="login" element={<Login />} />
+          // Inside Routes:
           <Route path="register" element={<Register />} />
           <Route path="verify-otp" element={<VerifyOtp />} />
           <Route path="profile" element={<Profile />} />
