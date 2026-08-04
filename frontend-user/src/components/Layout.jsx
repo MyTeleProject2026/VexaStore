@@ -72,11 +72,9 @@ export default function Layout() {
             </button>
 
             {isLoggedIn ? (
-              <div className="relative group">
-                <button className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition">
-                  <User size={20} />
-                </button>
-              </div>
+              <button className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition">
+                <User size={20} />
+              </button>
             ) : (
               <NavLink
                 to="/login"
