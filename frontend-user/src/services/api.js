@@ -31,6 +31,8 @@ export const authApi = {
   verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
   resendOtp: (data) => api.post('/api/auth/resend-otp', data),
   googleLogin: (data) => api.post('/api/auth/google', data),
+  forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/api/auth/reset-password', data),
 };
 
 // ============================================================
