@@ -4,6 +4,7 @@ import {
   Home, User, LogIn, Settings, Heart, Clock, Zap
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { ReactComponent as Logo } from '../assets/vexastore-icon.svg';
 
 // ... rest of Layout (categories should use Phone and Laptop)
 export default function Layout() {
@@ -57,8 +58,7 @@ export default function Layout() {
       <header className="sticky top-0 z-40 bg-dark-card/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
         <div className="px-4 py-2 flex items-center justify-between gap-2">
           <NavLink to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center border border-cyan-500/20">
-              <Download size={18} className="text-cyan-400" />
+            <Logo className="w-8 h-8" />
             </div>
             <div>
               <span className="text-lg font-bold gradient-text">VexaStore</span>
