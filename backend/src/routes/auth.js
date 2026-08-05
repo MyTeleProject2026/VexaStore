@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-// ✅ Ensure email service is imported
 const { sendEmail, sendOtpEmail } = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
@@ -13,9 +12,10 @@ function generateOTP() {
 }
 
 // ============================================================
-// POST: Register (Email/Password)
+// POST: Register
 // ============================================================
 router.post('/register', async (req, res, next) => {
+  const start = Date.now();
   const connection = await pool.getConnection();
   try {
     const { email, password, name } = req.body;
@@ -23,8 +23,12 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All fields required' });
     }
 
-    const [existing] = await connection.query('SELECT id FROM store_users WHERE email = ?', [email.trim().toLowerCase()]);
+    const [existing] = await connection.query(
+      'SELECT id FROM store_users WHERE email = ?',
+      [email.trim().toLowerCase()]
+    );
     if (existing.length) {
+      console.log('⏱️ Duplicate check took:', Date.now() - start, 'ms');
       return res.status(409).json({ success: false, message: 'Email already registered' });
     }
 
@@ -41,16 +45,17 @@ router.post('/register', async (req, res, next) => {
       [result.insertId, otp, expiresAt]
     );
 
-    // ✅ Send OTP email (but don't fail if email fails)
+    // Send OTP (fake email – logs to console)
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
       console.error('❌ Failed to send OTP email:', emailError.message);
-      // Continue – user can resend OTP later
     }
 
+    console.log('⏱️ Registration completed in:', Date.now() - start, 'ms');
     res.json({ success: true, message: 'Registration successful. Please verify your email with OTP.' });
   } catch (error) {
+    console.error('❌ Registration error:', error);
     next(error);
   } finally {
     connection.release();
@@ -68,7 +73,10 @@ router.post('/verify-otp', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and OTP required' });
     }
 
-    const [userRows] = await connection.query('SELECT id FROM store_users WHERE email = ?', [email.trim().toLowerCase()]);
+    const [userRows] = await connection.query(
+      'SELECT id FROM store_users WHERE email = ?',
+      [email.trim().toLowerCase()]
+    );
     if (!userRows.length) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -104,7 +112,10 @@ router.post('/resend-otp', async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email required' });
 
-    const [userRows] = await connection.query('SELECT id, email FROM store_users WHERE email = ?', [email.trim().toLowerCase()]);
+    const [userRows] = await connection.query(
+      'SELECT id, email FROM store_users WHERE email = ?',
+      [email.trim().toLowerCase()]
+    );
     if (!userRows.length) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -130,7 +141,7 @@ router.post('/resend-otp', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Login (Email/Password)
+// POST: Login
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -139,7 +150,10 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
-    const [rows] = await pool.query('SELECT * FROM store_users WHERE email = ?', [email.trim().toLowerCase()]);
+    const [rows] = await pool.query(
+      'SELECT * FROM store_users WHERE email = ?',
+      [email.trim().toLowerCase()]
+    );
     if (!rows.length) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -182,7 +196,10 @@ router.post('/google', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing Google data' });
     }
 
-    let [rows] = await pool.query('SELECT * FROM store_users WHERE google_id = ? OR email = ?', [google_id, email]);
+    let [rows] = await pool.query(
+      'SELECT * FROM store_users WHERE google_id = ? OR email = ?',
+      [google_id, email]
+    );
     let user;
     if (rows.length) {
       user = rows[0];
@@ -229,9 +246,7 @@ router.post('/forgot-password', async (req, res, next) => {
       'SELECT id, email FROM store_users WHERE email = ?',
       [email.trim().toLowerCase()]
     );
-
     if (!rows.length) {
-      // For security, don't reveal if email exists
       return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
     }
 
@@ -242,7 +257,6 @@ router.post('/forgot-password', async (req, res, next) => {
       { expiresIn: '1h' }
     );
 
-    // Store token in otp_codes (now TEXT column)
     await pool.query(
       `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) 
        VALUES (?, ?, 'password_reset', DATE_ADD(NOW(), INTERVAL 1 HOUR))
@@ -251,16 +265,14 @@ router.post('/forgot-password', async (req, res, next) => {
     );
 
     const resetLink = `${process.env.FRONTEND_USER_URL || 'https://vexastore.onrender.com'}/reset-password?token=${resetToken}`;
-    
-    // Send email
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
-        <h2 style="margin:0 0 16px;">Reset Your Password</h2>
-        <p style="margin:0 0 16px;">Click the link below to reset your password. This link expires in 1 hour.</p>
+        <h2>Reset Your Password</h2>
+        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
         <a href="${resetLink}" style="display: inline-block; background: #06b6d4; color: #000000; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: bold; margin: 16px 0;">
           Reset Password
         </a>
-        <p style="margin:16px 0 0; color:#cbd5e1;">If you didn't request this, please ignore this email.</p>
+        <p>If you didn't request this, please ignore this email.</p>
       </div>
     `;
 
@@ -268,7 +280,6 @@ router.post('/forgot-password', async (req, res, next) => {
       await sendEmail({ to: email, subject: 'VexaStore Password Reset', html });
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError.message);
-      // Still return success to avoid leaking email existence
     }
 
     res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
@@ -291,14 +302,12 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
 
-    // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
-
     if (decoded.purpose !== 'password_reset') {
       return res.status(400).json({ success: false, message: 'Invalid token purpose' });
     }
@@ -311,18 +320,9 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
 
-    // Update password
     const hashed = await bcrypt.hash(newPassword, 10);
-    await connection.query(
-      'UPDATE store_users SET password = ? WHERE id = ?',
-      [hashed, decoded.id]
-    );
-
-    // Mark token as used
-    await connection.query(
-      'UPDATE otp_codes SET is_used = 1 WHERE id = ?',
-      [otpRows[0].id]
-    );
+    await connection.query('UPDATE store_users SET password = ? WHERE id = ?', [hashed, decoded.id]);
+    await connection.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [otpRows[0].id]);
 
     res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
