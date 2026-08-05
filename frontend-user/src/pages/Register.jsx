@@ -15,39 +15,35 @@ export default function Register() {
   const { showSuccess, showError } = useNotification();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name || !email || !password) {
-      showError('Please fill all fields');
-      return;
+  e.preventDefault();
+  if (!name || !email || !password) {
+    showError('Please fill all fields');
+    return;
+  }
+  if (password !== confirmPassword) {
+    showError('Passwords do not match');
+    return;
+  }
+  if (password.length < 6) {
+    showError('Password must be at least 6 characters');
+    return;
+  }
+  try {
+    setLoading(true);
+    const res = await authApi.register({ name, email, password });
+    if (res.data?.success) {
+      showSuccess('Registration successful! Please verify your email.');
+      navigate('/verify-otp', { state: { email } });
     }
-    if (password !== confirmPassword) {
-      showError('Passwords do not match');
-      return;
-    }
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await authApi.register({ name, email, password });
-      if (res.data?.success) {
-        showSuccess('Registration successful! Please verify your email.');
-        navigate('/verify-otp', { state: { email } });
-      }
-    } catch (err) {
-      const status = err.response?.status;
-      let msg = err.response?.data?.message || 'Registration failed';
-      if (status === 409) {
-        msg = 'Email already registered. Please login instead.';
-      } else if (status === 500) {
-        msg = 'Server error. Please try again later.';
-      }
-      showError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    // ✅ Show the exact error from backend
+    const msg = err.response?.data?.message || err.message || 'Registration failed';
+    console.error('Registration error:', err.response?.data);
+    showError(`❌ ${msg}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
