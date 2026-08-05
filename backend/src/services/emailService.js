@@ -1,51 +1,63 @@
 const nodemailer = require('nodemailer');
 
-// ✅ Force fallback mode – always log emails to console (no real sending)
-const USE_FAKE_EMAIL = true; // Set to false when you have SMTP configured
+// ============================================================
+// SMTP Configuration (from environment variables)
+// ============================================================
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
+const SMTP_USER = process.env.SMTP_USER; // Your SMTP username (e.g., Brevo login email)
+const SMTP_PASS = process.env.SMTP_PASS; // Your SMTP password or API key
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@vexastore.com';
+const FROM_NAME = process.env.MAIL_FROM_NAME || 'VexaStore';
 
-/**
- * Send email – logs to console in fake mode
- */
-async function sendEmail({ to, subject, html }) {
-  if (USE_FAKE_EMAIL) {
-    console.log('📧 [FAKE EMAIL] To:', to);
-    console.log('📧 [FAKE EMAIL] Subject:', subject);
-    console.log('📧 [FAKE EMAIL] Body:', html);
-    return true;
-  }
+// ============================================================
+// Transporter – Reusable SMTP connection
+// ============================================================
+let transporter = null;
 
-  // Real email logic (if you configure SMTP later)
-  let transporter = null;
-  if (process.env.KEPLERS_SMTP_HOST && process.env.KEPLERS_EMAIL && process.env.KEPLERS_PASSWORD) {
+function getTransporter() {
+  if (transporter) return transporter;
+
+  // Use SMTP if configured
+  if (SMTP_USER && SMTP_PASS) {
     transporter = nodemailer.createTransport({
-      host: process.env.KEPLERS_SMTP_HOST,
-      port: parseInt(process.env.KEPLERS_SMTP_PORT) || 587,
-      secure: false,
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465, // 465 = SSL, 587 = TLS
       auth: {
-        user: process.env.KEPLERS_EMAIL,
-        pass: process.env.KEPLERS_PASSWORD,
+        user: SMTP_USER,
+        pass: SMTP_PASS,
       },
     });
-  } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
+    console.log('✅ SMTP transporter initialized with:', SMTP_HOST);
   } else {
-    console.warn('⚠️ No real mail service configured, but fake mode is enabled anyway.');
-    return true;
+    // Fallback: console logging (for development/testing)
+    console.warn('⚠️ SMTP not configured. Emails will be logged to console.');
+    transporter = {
+      sendMail: (mailOptions) => {
+        console.log('📧 [FAKE EMAIL] To:', mailOptions.to);
+        console.log('📧 [FAKE EMAIL] Subject:', mailOptions.subject);
+        console.log('📧 [FAKE EMAIL] Body:', mailOptions.html);
+        return Promise.resolve();
+      }
+    };
   }
+  return transporter;
+}
 
+// ============================================================
+// Send Email – Main function
+// ============================================================
+async function sendEmail({ to, subject, html }) {
+  const transporter = getTransporter();
   try {
-    await transporter.sendMail({
-      from: `"${process.env.MAIL_FROM_NAME || 'VexaStore'}" <${process.env.KEPLERS_EMAIL || process.env.GMAIL_USER || 'noreply@vexastore.com'}>`,
+    const info = await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
       to,
       subject,
       html
     });
+    console.log('✅ Email sent to:', to, 'Message ID:', info.messageId);
     return true;
   } catch (error) {
     console.error('❌ Email send failed:', error.message);
@@ -53,9 +65,9 @@ async function sendEmail({ to, subject, html }) {
   }
 }
 
-/**
- * Send OTP email – logs OTP to console
- */
+// ============================================================
+// Send OTP Email – Verification code
+// ============================================================
 async function sendOtpEmail(to, otp) {
   const html = `
     <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
@@ -70,4 +82,7 @@ async function sendOtpEmail(to, otp) {
   return sendEmail({ to, subject: 'VexaStore Email Verification', html });
 }
 
+// ============================================================
+// Export functions
+// ============================================================
 module.exports = { sendEmail, sendOtpEmail };
