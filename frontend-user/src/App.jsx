@@ -15,7 +15,7 @@ import Profile from './pages/Profile';
 import Downloads from './pages/Downloads';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import { NotificationProvider, useNotification } from './hooks/useNotification';
+import { NotificationProvider } from './hooks/useNotification';
 
 function AppContent() {
   const [maintenance, setMaintenance] = useState({ isEnabled: false, message: '' });
@@ -79,7 +79,6 @@ function AppContent() {
 }
 
 function App() {
-  // Use the environment variable for Google Client ID
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
   return (
     <GoogleOAuthProvider clientId={clientId}>
