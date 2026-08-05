@@ -37,9 +37,9 @@ export default function VerifyOtp() {
       await authApi.resendOtp({ email });
       showSuccess('OTP resent');
     } catch (err) {
-      showError('Failed to resend OTP');
-    } finally {
-      setResending(false);
+      const msg = err.response?.data?.message || err.message || 'Failed to resend OTP';
+      console.error('Resend error:', err.response?.data);
+      showError(`❌ ${msg}`);
     }
   };
 
