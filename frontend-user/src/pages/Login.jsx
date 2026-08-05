@@ -56,14 +56,12 @@ export default function Login() {
         showSuccess('Login successful');
         navigate('/');
       }
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed';
-      showError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    } 
+    catch (err) {
+  const msg = err.response?.data?.message || err.message || 'Login failed';
+  console.error('Login error:', err.response?.data);
+  showError(`❌ ${msg}`);
+}
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
       <div className="glass-card max-w-md w-full p-6">
