@@ -5,6 +5,7 @@ let transporter = null;
 function getTransporter() {
   if (transporter) return transporter;
   
+  // Try Keplers SMTP
   if (process.env.KEPLERS_SMTP_HOST && process.env.KEPLERS_EMAIL && process.env.KEPLERS_PASSWORD) {
     transporter = nodemailer.createTransport({
       host: process.env.KEPLERS_SMTP_HOST,
@@ -15,7 +16,9 @@ function getTransporter() {
         pass: process.env.KEPLERS_PASSWORD,
       },
     });
-  } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+  } 
+  // Try Gmail SMTP
+  else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -23,7 +26,9 @@ function getTransporter() {
         pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
-  } else {
+  } 
+  // Fallback: console logger (no real email)
+  else {
     console.warn('⚠️ No mail service configured. Emails will be logged to console.');
     transporter = {
       sendMail: (mailOptions) => {
@@ -37,6 +42,11 @@ function getTransporter() {
   return transporter;
 }
 
+/**
+ * Send an email
+ * @param {Object} options - { to, subject, html }
+ * @returns {Promise<boolean>} - true if sent, false if error
+ */
 async function sendEmail({ to, subject, html }) {
   const transporter = getTransporter();
   try {
@@ -48,11 +58,17 @@ async function sendEmail({ to, subject, html }) {
     });
     return true;
   } catch (error) {
-    console.error('Email send failed:', error.message);
+    console.error('❌ Email send failed:', error.message);
     return false;
   }
 }
 
+/**
+ * Send OTP email
+ * @param {string} to - recipient email
+ * @param {string} otp - 6-digit code
+ * @returns {Promise<boolean>}
+ */
 async function sendOtpEmail(to, otp) {
   const html = `
     <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
