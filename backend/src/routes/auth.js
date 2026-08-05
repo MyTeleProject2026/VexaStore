@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-const { sendOtpEmail } = require('../services/emailService');
+const { sendEmail, sendOtpEmail } = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
@@ -40,12 +40,12 @@ router.post('/register', async (req, res, next) => {
       [result.insertId, otp, expiresAt]
     );
 
-    // ✅ Attempt to send email, but don't fail if it errors
+    // ✅ Send OTP email (but don't fail if email fails)
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
       console.error('❌ Failed to send OTP email:', emailError.message);
-      // Still return success – user can resend OTP later
+      // Continue – user can resend OTP later
     }
 
     res.json({ success: true, message: 'Registration successful. Please verify your email with OTP.' });
@@ -114,7 +114,11 @@ router.post('/resend-otp', async (req, res, next) => {
       `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
       [userRows[0].id, otp, expiresAt]
     );
-    await sendOtpEmail(email, otp);
+    try {
+      await sendOtpEmail(email, otp);
+    } catch (emailError) {
+      console.error('❌ Failed to resend OTP email:', emailError.message);
+    }
 
     res.json({ success: true, message: 'OTP resent' });
   } catch (error) {
@@ -168,7 +172,50 @@ router.post('/login', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Forgot Password – Send reset link
+// POST: Google Login
+// ============================================================
+router.post('/google', async (req, res, next) => {
+  try {
+    const { google_id, email, name } = req.body;
+    if (!google_id || !email) {
+      return res.status(400).json({ success: false, message: 'Missing Google data' });
+    }
+
+    let [rows] = await pool.query('SELECT * FROM store_users WHERE google_id = ? OR email = ?', [google_id, email]);
+    let user;
+    if (rows.length) {
+      user = rows[0];
+      if (!user.google_id) {
+        await pool.query('UPDATE store_users SET google_id = ? WHERE id = ?', [google_id, user.id]);
+        user.google_id = google_id;
+      }
+    } else {
+      const [result] = await pool.query(
+        `INSERT INTO store_users (email, name, google_id, is_verified) VALUES (?, ?, ?, 1)`,
+        [email, name || email.split('@')[0], google_id]
+      );
+      const [newUser] = await pool.query('SELECT * FROM store_users WHERE id = ?', [result.insertId]);
+      user = newUser[0];
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: 'user' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, email: user.email, name: user.name }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Forgot Password
 // ============================================================
 router.post('/forgot-password', async (req, res, next) => {
   try {
@@ -194,7 +241,7 @@ router.post('/forgot-password', async (req, res, next) => {
       { expiresIn: '1h' }
     );
 
-    // Store token in a new table (or reuse otp_codes with purpose='password_reset')
+    // Store token in otp_codes (now TEXT column)
     await pool.query(
       `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) 
        VALUES (?, ?, 'password_reset', DATE_ADD(NOW(), INTERVAL 1 HOUR))
@@ -216,7 +263,12 @@ router.post('/forgot-password', async (req, res, next) => {
       </div>
     `;
 
-    await sendEmail({ to: email, subject: 'VexaStore Password Reset', html });
+    try {
+      await sendEmail({ to: email, subject: 'VexaStore Password Reset', html });
+    } catch (emailError) {
+      console.error('❌ Failed to send reset email:', emailError.message);
+      // Still return success to avoid leaking email existence
+    }
 
     res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
   } catch (error) {
@@ -225,7 +277,7 @@ router.post('/forgot-password', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Reset Password – Verify token and update password
+// POST: Reset Password
 // ============================================================
 router.post('/reset-password', async (req, res, next) => {
   const connection = await pool.getConnection();
@@ -279,66 +331,4 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
-// ============================================================
-// POST: Google Login (Using Frontend-issued token)
-// ============================================================
-router.post('/google', async (req, res, next) => {
-  try {
-    const { google_id, email, name } = req.body;
-    if (!google_id || !email) {
-      return res.status(400).json({ success: false, message: 'Missing Google data' });
-    }
-
-    // Check if user exists with this google_id or email
-    let [rows] = await pool.query(
-      'SELECT * FROM store_users WHERE google_id = ? OR email = ?',
-      [google_id, email.trim().toLowerCase()]
-    );
-    let user;
-    if (rows.length) {
-      user = rows[0];
-      // If found by email but no google_id, link the account
-      if (!user.google_id) {
-        await pool.query(
-          'UPDATE store_users SET google_id = ? WHERE id = ?',
-          [google_id, user.id]
-        );
-        user.google_id = google_id;
-      }
-    } else {
-      // Create new user with Google info
-      const [result] = await pool.query(
-        `INSERT INTO store_users (email, name, google_id, is_verified) 
-         VALUES (?, ?, ?, 1)`,
-        [email.trim().toLowerCase(), name || email.split('@')[0], google_id]
-      );
-      const [newUser] = await pool.query(
-        'SELECT * FROM store_users WHERE id = ?',
-        [result.insertId]
-      );
-      user = newUser[0];
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: 'user' },
-      process.env.JWT_SECRET || 'your-secret',
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      success: true,
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        is_verified: user.is_verified,
-        google_id: user.google_id
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 module.exports = router;
