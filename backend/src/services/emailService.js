@@ -25,7 +25,6 @@ function getTransporter() {
     });
   } else {
     console.warn('⚠️ No mail service configured. Emails will be logged to console.');
-    // Fallback: create a fake transporter that logs
     transporter = {
       sendMail: (mailOptions) => {
         console.log('📧 [FAKE EMAIL] To:', mailOptions.to);
