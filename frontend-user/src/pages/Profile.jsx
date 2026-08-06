@@ -13,7 +13,9 @@ export default function Profile() {
     if (userData) {
       try {
         setUser(JSON.parse(userData));
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to parse user data');
+      }
     }
   }, []);
 
