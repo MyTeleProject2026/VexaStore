@@ -32,12 +32,18 @@ export default function ChangePassword() {
 
     try {
       setLoading(true);
-      // Call backend to change password
-      // For now, we'll just show success
-      showSuccess('Password changed successfully!');
-      navigate('/profile');
+      // ✅ Call real API
+      const res = await authApi.changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+      });
+      if (res.data?.success) {
+        showSuccess('Password changed successfully!');
+        navigate('/profile');
+      }
     } catch (err) {
-      showError(err.message || 'Failed to change password');
+      const msg = err.response?.data?.message || err.message || 'Failed to change password';
+      showError(msg);
     } finally {
       setLoading(false);
     }
