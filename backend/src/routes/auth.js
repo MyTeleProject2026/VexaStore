@@ -371,5 +371,82 @@ router.post('/reset-password', async (req, res, next) => {
     connection.release();
   }
 });
+// ============================================================
+// PUT: Update User Profile
+// ============================================================
+router.put('/profile', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name is required' });
+    }
+
+    const [result] = await pool.query(
+      'UPDATE store_users SET name = ? WHERE id = ?',
+      [name.trim(), userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Return updated user info (without password)
+    const [rows] = await pool.query(
+      'SELECT id, email, name, is_verified, is_active FROM store_users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: rows[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Change Password
+// ============================================================
+router.post('/change-password', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'All fields required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const [rows] = await pool.query(
+      'SELECT password FROM store_users WHERE id = ?',
+      [userId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = rows[0];
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE store_users SET password = ? WHERE id = ?',
+      [hashed, userId]
+    );
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;
