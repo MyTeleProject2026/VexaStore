@@ -176,7 +176,7 @@ router.post('/resend-otp', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Login (Email/Password)
+// POST: Login
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -358,13 +358,13 @@ router.post('/reset-password', async (req, res, next) => {
 });
 
 // ============================================================
-// GET: User Profile (Full) – SAFE VERSION
+// GET: User Profile
 // ============================================================
 router.get('/profile', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled FROM store_users WHERE id = ?',
       [userId]
     );
     if (!rows.length) {
@@ -378,7 +378,7 @@ router.get('/profile', authUser, async (req, res, next) => {
 });
 
 // ============================================================
-// PUT: Update User Profile (Full)
+// PUT: Update Profile
 // ============================================================
 router.put('/profile/full', authUser, async (req, res, next) => {
   try {
@@ -402,7 +402,7 @@ router.put('/profile/full', authUser, async (req, res, next) => {
     );
 
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled FROM store_users WHERE id = ?',
       [userId]
     );
 
@@ -476,6 +476,200 @@ router.post('/change-password', authUser, async (req, res, next) => {
   } catch (error) {
     console.error('❌ Change password error:', error);
     next(error);
+  }
+});
+
+// ============================================================
+// POST: Resend Verification Email
+// ============================================================
+router.post('/resend-verification', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await pool.query(
+      'SELECT email, is_verified FROM store_users WHERE id = ?',
+      [userId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    const user = rows[0];
+    if (user.is_verified === 1) {
+      return res.status(400).json({ success: false, message: 'Email already verified' });
+    }
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await pool.query(
+      'DELETE FROM otp_codes WHERE user_id = ? AND purpose = "email_verification"',
+      [userId]
+    );
+    await pool.query(
+      `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
+      [userId, otp, expiresAt]
+    );
+    await sendOtpEmail(user.email, otp);
+
+    res.json({ success: true, message: 'Verification email resent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Enable 2FA
+// ============================================================
+router.post('/twofa/enable', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { secret } = req.body;
+
+    // Generate a secret (for demo, we store a random string)
+    const twofaSecret = secret || Math.random().toString(36).substring(2, 15);
+    const twofaBackupCodes = Array.from({ length: 8 }, () => 
+      Math.random().toString(36).substring(2, 8).toUpperCase()
+    );
+
+    await pool.query(
+      'UPDATE store_users SET twofa_enabled = 1, twofa_secret = ?, twofa_backup_codes = ? WHERE id = ?',
+      [twofaSecret, JSON.stringify(twofaBackupCodes), userId]
+    );
+
+    res.json({
+      success: true,
+      message: '2FA enabled successfully',
+      secret: twofaSecret,
+      backup_codes: twofaBackupCodes,
+    });
+  } catch (error) {
+    console.error('❌ 2FA enable error:', error);
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Disable 2FA
+// ============================================================
+router.post('/twofa/disable', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await pool.query(
+      'UPDATE store_users SET twofa_enabled = 0, twofa_secret = NULL, twofa_backup_codes = NULL WHERE id = ?',
+      [userId]
+    );
+    res.json({ success: true, message: '2FA disabled successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// GET: Sessions (Connected Devices)
+// ============================================================
+router.get('/sessions', authUser, async (req, res, next) => {
+  try {
+    // For now, return current session with device info
+    const [rows] = await pool.query(
+      'SELECT user_agent, ip_address, created_at FROM user_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+      [req.user.id]
+    );
+    
+    res.json({
+      success: true,
+      data: [
+        {
+          device: 'Current Device',
+          browser: req.headers['user-agent'] || 'VexaStore App',
+          ip: req.ip || 'Unknown',
+          last_active: new Date().toISOString(),
+          is_current: true,
+          created_at: rows[0]?.created_at || new Date().toISOString(),
+        },
+      ],
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// GET: Activity Log
+// ============================================================
+router.get('/activity-log', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await pool.query(
+      `SELECT action, ip_address, user_agent, created_at 
+       FROM user_activity_logs 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 50`,
+      [userId]
+    );
+    res.json({ success: true, data: rows || [] });
+  } catch (error) {
+    res.json({ success: true, data: [] });
+  }
+});
+
+// ============================================================
+// GET: Export Data (JSON)
+// ============================================================
+router.get('/export-data', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user profile
+    const [userRows] = await pool.query(
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
+      [userId]
+    );
+    
+    // Get activity logs
+    const [activityRows] = await pool.query(
+      'SELECT action, ip_address, user_agent, created_at FROM user_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 100',
+      [userId]
+    );
+    
+    const exportData = {
+      user: userRows[0] || null,
+      activity: activityRows || [],
+      exported_at: new Date().toISOString(),
+    };
+    
+    res.json({ success: true, data: exportData });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// POST: Delete Account
+// ============================================================
+router.post('/delete-account', authUser, async (req, res, next) => {
+  const connection = await pool.getConnection();
+  try {
+    const userId = req.user.id;
+    const { confirm } = req.body;
+
+    if (!confirm || confirm !== 'DELETE') {
+      return res.status(400).json({ success: false, message: 'Type "DELETE" to confirm' });
+    }
+
+    await connection.beginTransaction();
+
+    // Delete all user data
+    await connection.query('DELETE FROM otp_codes WHERE user_id = ?', [userId]);
+    await connection.query('DELETE FROM user_activity_logs WHERE user_id = ?', [userId]);
+    await connection.query('DELETE FROM store_users WHERE id = ?', [userId]);
+
+    await connection.commit();
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    await connection.rollback();
+    next(error);
+  } finally {
+    connection.release();
   }
 });
 
