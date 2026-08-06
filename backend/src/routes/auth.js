@@ -4,7 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
-const { authAdmin, authUser } = require('../middleware/auth');
+// ✅ Import authUser middleware
+const { authUser } = require('../middleware/auth');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
 function generateOTP() {
@@ -23,7 +25,6 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All fields required' });
     }
 
-    // ✅ Check if user exists
     const [existing] = await connection.query(
       'SELECT id, is_verified FROM store_users WHERE email = ?',
       [email.trim().toLowerCase()]
@@ -31,41 +32,31 @@ router.post('/register', async (req, res, next) => {
 
     if (existing.length) {
       const user = existing[0];
-      
-      // ✅ If user exists but is NOT verified → resend OTP
       if (user.is_verified === 0) {
         const otp = generateOTP();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-        
-        // Delete old OTPs for this user
         await connection.query(
           'DELETE FROM otp_codes WHERE user_id = ? AND purpose = "email_verification"',
           [user.id]
         );
-        
         await connection.query(
           `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
           [user.id, otp, expiresAt]
         );
-        
         try {
           await sendOtpEmail(email, otp);
         } catch (emailError) {
           console.error('❌ Failed to send OTP email:', emailError.message);
         }
-        
         return res.status(409).json({
           success: false,
           message: 'Account already registered but not verified. New OTP sent to your email.',
-          action: 'verify' // ✅ Frontend can use this to redirect
+          action: 'verify'
         });
       }
-      
-      // ✅ User exists and IS verified
       return res.status(409).json({ success: false, message: 'Email already registered. Please login.' });
     }
 
-    // ✅ New user – create account
     const hashed = await bcrypt.hash(password, 10);
     const [result] = await connection.query(
       `INSERT INTO store_users (email, password, name, is_verified) VALUES (?, ?, ?, 0)`,
@@ -156,7 +147,6 @@ router.post('/resend-otp', async (req, res, next) => {
     if (!userRows.length) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
     if (userRows[0].is_verified === 1) {
       return res.status(400).json({ success: false, message: 'Email already verified. Please login.' });
     }
@@ -164,18 +154,14 @@ router.post('/resend-otp', async (req, res, next) => {
     const userId = userRows[0].id;
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    
-    // Delete old OTPs
     await connection.query(
       'DELETE FROM otp_codes WHERE user_id = ? AND purpose = "email_verification"',
       [userId]
     );
-    
     await connection.query(
       `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
       [userId, otp, expiresAt]
     );
-    
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
@@ -371,8 +357,9 @@ router.post('/reset-password', async (req, res, next) => {
     connection.release();
   }
 });
+
 // ============================================================
-// PUT: Update User Profile
+// PUT: Update User Profile (Name only) – NEW
 // ============================================================
 router.put('/profile', authUser, async (req, res, next) => {
   try {
@@ -392,7 +379,6 @@ router.put('/profile', authUser, async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Return updated user info (without password)
     const [rows] = await pool.query(
       'SELECT id, email, name, is_verified, is_active FROM store_users WHERE id = ?',
       [userId]
@@ -409,7 +395,7 @@ router.put('/profile', authUser, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Change Password
+// POST: Change Password – NEW
 // ============================================================
 router.post('/change-password', authUser, async (req, res, next) => {
   try {
