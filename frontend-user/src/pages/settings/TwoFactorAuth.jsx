@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
 import { authApi } from '../../services/api';
-import { ArrowLeft, Shield, QrCode, CheckCircle, Copy, Key } from 'lucide-react';
+import { ArrowLeft, Shield, QrCode, CheckCircle, Copy, Key, Lock } from 'lucide-react';
 
 export default function TwoFactorAuth() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const [step, setStep] = useState(1); // 1: intro, 2: QR & secret, 3: verify
+  const [step, setStep] = useState(1);
   const [secret, setSecret] = useState('');
   const [qrCode, setQrCode] = useState('');
   const [token, setToken] = useState('');
@@ -16,7 +16,6 @@ export default function TwoFactorAuth() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    // Check if 2FA already enabled
     const checkStatus = async () => {
       try {
         const res = await authApi.getProfile();
@@ -38,7 +37,9 @@ export default function TwoFactorAuth() {
         setStep(2);
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to generate 2FA setup');
+      const msg = err.response?.data?.message || 'Failed to generate 2FA setup';
+      showError(msg);
+      console.error('2FA generate error:', err);
     } finally {
       setLoading(false);
     }
@@ -75,13 +76,8 @@ export default function TwoFactorAuth() {
         <div className="glass-card max-w-md w-full p-6 text-center">
           <Shield size={48} className="text-emerald-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">2FA Already Enabled</h1>
-          <p className="text-slate-400 mt-2">Your account is already protected with two-factor authentication.</p>
-          <button
-            onClick={() => navigate('/profile')}
-            className="btn-primary w-full mt-6"
-          >
-            Back to Profile
-          </button>
+          <p className="text-slate-400 mt-2">Your account is already protected.</p>
+          <button onClick={() => navigate('/profile')} className="btn-primary w-full mt-6">Back to Profile</button>
         </div>
       </div>
     );
@@ -102,11 +98,10 @@ export default function TwoFactorAuth() {
             <h1 className="text-2xl font-bold text-white">Two‑Factor Authentication</h1>
           </div>
 
-          {/* Step 1: Intro */}
           {step === 1 && (
             <div className="space-y-4">
               <p className="text-slate-400">
-                Add an extra layer of security to your account. After enabling 2FA, you'll need to enter a one-time code from your authenticator app every time you sign in.
+                Add an extra layer of security. After enabling, you'll need a one‑time code from your authenticator app every time you sign in.
               </p>
               <ul className="text-sm text-slate-400 space-y-2">
                 <li>✅ Use Google Authenticator, Authy, or any TOTP app</li>
@@ -118,12 +113,16 @@ export default function TwoFactorAuth() {
                 disabled={loading}
                 className="btn-primary w-full py-3 flex items-center justify-center gap-2"
               >
-                {loading ? 'Generating...' : 'Set up 2FA'}
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <Lock size={18} />
+                )}
+                {loading ? 'Generating...' : 'Enable 2FA'}
               </button>
             </div>
           )}
 
-          {/* Step 2: QR & Secret */}
           {step === 2 && (
             <div className="space-y-4">
               <p className="text-sm text-slate-400">
@@ -139,7 +138,7 @@ export default function TwoFactorAuth() {
                 </button>
               </div>
               <div>
-                <label className="input-label">Enter 6-digit code from authenticator</label>
+                <label className="input-label">Enter 6‑digit code from authenticator</label>
                 <input
                   type="text"
                   maxLength="6"
@@ -154,29 +153,27 @@ export default function TwoFactorAuth() {
                 disabled={loading || token.length !== 6}
                 className="btn-primary w-full py-3 flex items-center justify-center gap-2"
               >
-                {loading ? 'Verifying...' : <CheckCircle size={18} />}
-                Verify & Enable
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <CheckCircle size={18} />
+                )}
+                {loading ? 'Verifying...' : 'Verify & Enable'}
               </button>
             </div>
           )}
 
-          {/* Step 3: Backup Codes */}
           {step === 3 && (
             <div className="space-y-4 text-center">
               <CheckCircle size={48} className="text-emerald-400 mx-auto" />
               <h2 className="text-xl font-bold text-white">2FA Enabled!</h2>
-              <p className="text-slate-400">Save these backup codes in a safe place. You can use them to access your account if you lose your authenticator device.</p>
+              <p className="text-slate-400">Save these backup codes in a safe place.</p>
               <div className="bg-dark-bg/50 rounded-xl p-4 grid grid-cols-2 gap-2 text-sm font-mono">
                 {backupCodes.map((code, i) => (
                   <span key={i} className="text-cyan-300">{code}</span>
                 ))}
               </div>
-              <button
-                onClick={() => navigate('/profile')}
-                className="btn-primary w-full py-3"
-              >
-                Done
-              </button>
+              <button onClick={() => navigate('/profile')} className="btn-primary w-full py-3">Done</button>
             </div>
           )}
         </div>
