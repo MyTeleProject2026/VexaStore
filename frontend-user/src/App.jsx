@@ -12,13 +12,22 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
 import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import Downloads from './pages/Downloads';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import Favorites from './pages/Favorites';
 import Settings from './pages/Settings';
-import EditProfile from './pages/EditProfile';
-import ChangePassword from './pages/ChangePassword';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
+// ✅ New Settings Pages
+import TwoFactorAuth from './pages/settings/TwoFactorAuth';
+import ChangePassword from './pages/settings/ChangePassword';
+import ConnectedDevices from './pages/settings/ConnectedDevices';
+import DataExport from './pages/settings/DataExport';
+import DeleteAccount from './pages/settings/DeleteAccount';
+import ActivityLog from './pages/settings/ActivityLog';
+import ConnectedApps from './pages/settings/ConnectedApps';
+
 import { NotificationProvider } from './hooks/useNotification';
 
 function AppContent() {
@@ -71,14 +80,27 @@ function AppContent() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="verify-otp" element={<VerifyOtp />} />
+          
+          {/* Profile & Settings */}
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<EditProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
+          
+          {/* Settings Pages */}
+          <Route path="settings/2fa" element={<TwoFactorAuth />} />
+          <Route path="settings/devices" element={<ConnectedDevices />} />
+          <Route path="settings/export" element={<DataExport />} />
+          <Route path="settings/delete" element={<DeleteAccount />} />
+          <Route path="settings/activity" element={<ActivityLog />} />
+          <Route path="settings/apps" element={<ConnectedApps />} />
+          
+          {/* Other Pages */}
           <Route path="downloads" element={<Downloads />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="settings" element={<Settings />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
