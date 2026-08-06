@@ -1,26 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi } from '../services/api';
+import { authApi, api } from '../services/api';
 import { 
   User, Mail, Phone, Camera, LogOut, 
   Shield, Lock, Globe, Smartphone, 
   ChevronRight, CheckCircle, Edit2, 
   ArrowLeft, UserCircle, Database, 
-  Clock, Layers, Key, Eye, EyeOff
+  Clock, Layers, Key, Eye, EyeOff, Save
 } from 'lucide-react';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotification();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('personal');
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', bio: '' });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Fetch user profile on mount
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -74,14 +74,26 @@ export default function Profile() {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    // Upload to Cloudinary via a separate endpoint (you can use the existing cloudinary config)
-    // For simplicity, we'll assume you have a route /api/upload/avatar that returns URL
-    // I'll provide a quick implementation: use your existing cloudinary upload from settings.
-    // We'll reuse the imageUpload middleware.
-    // For now, we'll simulate with a direct Cloudinary upload using a separate form.
-    // I'll provide the route in a separate answer if needed.
-    // For now, alert.
-    showInfo('Avatar upload will be implemented using Cloudinary.');
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    try {
+      setUploading(true);
+      const res = await api.post('/api/upload/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.success) {
+        const avatar_url = res.data.avatar_url;
+        await authApi.updateProfilePicture(avatar_url);
+        showSuccess('Avatar updated');
+        fetchProfile();
+      }
+    } catch (err) {
+      showError('Avatar upload failed');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -130,9 +142,13 @@ export default function Profile() {
               </span>
             )}
           </div>
-          <label className="absolute bottom-0 right-0 bg-cyan-500 rounded-full p-1.5 cursor-pointer hover:bg-cyan-400 transition">
-            <Camera size={16} className="text-black" />
-            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          <label className="absolute bottom-0 right-0 bg-cyan-500 rounded-full p-1.5 cursor-pointer hover:bg-cyan-400 transition disabled:opacity-50">
+            {uploading ? (
+              <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block"></span>
+            ) : (
+              <Camera size={16} className="text-black" />
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploading} />
           </label>
         </div>
         <div className="flex-1 text-center md:text-left">
@@ -221,7 +237,7 @@ export default function Profile() {
                   disabled={saving}
                   className="btn-primary flex items-center gap-2"
                 >
-                  {saving ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <CheckCircle size={18} />}
+                  {saving ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <Save size={18} />}
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
