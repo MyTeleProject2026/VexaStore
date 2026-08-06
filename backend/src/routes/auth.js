@@ -13,7 +13,7 @@ function generateOTP() {
 }
 
 // ============================================================
-// POST: Register
+// POST: Register (Email/Password)
 // ============================================================
 router.post('/register', async (req, res, next) => {
   const start = Date.now();
@@ -176,7 +176,7 @@ router.post('/resend-otp', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Login
+// POST: Login (Email/Password)
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -358,13 +358,13 @@ router.post('/reset-password', async (req, res, next) => {
 });
 
 // ============================================================
-// GET: User Profile (Full)
+// GET: User Profile (Full) – SAFE VERSION
 // ============================================================
 router.get('/profile', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, updated_at FROM store_users WHERE id = ?',
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
       [userId]
     );
     if (!rows.length) {
@@ -372,12 +372,13 @@ router.get('/profile', authUser, async (req, res, next) => {
     }
     res.json({ success: true, user: rows[0] });
   } catch (error) {
+    console.error('❌ Profile fetch error:', error);
     next(error);
   }
 });
 
 // ============================================================
-// PUT: Update Profile (Name, Phone, Bio)
+// PUT: Update User Profile (Full)
 // ============================================================
 router.put('/profile/full', authUser, async (req, res, next) => {
   try {
@@ -401,12 +402,13 @@ router.put('/profile/full', authUser, async (req, res, next) => {
     );
 
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, updated_at FROM store_users WHERE id = ?',
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
       [userId]
     );
 
     res.json({ success: true, message: 'Profile updated', user: rows[0] });
   } catch (error) {
+    console.error('❌ Profile update error:', error);
     next(error);
   }
 });
@@ -430,12 +432,13 @@ router.put('/profile/picture', authUser, async (req, res, next) => {
 
     res.json({ success: true, message: 'Profile picture updated', avatar_url });
   } catch (error) {
+    console.error('❌ Avatar update error:', error);
     next(error);
   }
 });
 
 // ============================================================
-// PUT: Change Password
+// POST: Change Password
 // ============================================================
 router.post('/change-password', authUser, async (req, res, next) => {
   try {
@@ -471,6 +474,7 @@ router.post('/change-password', authUser, async (req, res, next) => {
 
     res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
+    console.error('❌ Change password error:', error);
     next(error);
   }
 });
