@@ -47,4 +47,4 @@ export const maintenanceApi = {
   getStatus: () => api.get('/api/maintenance/status'),
 };
 
-export default api;r
+export default api;
