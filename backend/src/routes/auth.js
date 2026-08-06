@@ -3,8 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-const { sendEmail, sendOtpEmail } = require('../services/emailService');
-
+const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
 function generateOTP() {
@@ -277,7 +276,7 @@ router.post('/forgot-password', async (req, res, next) => {
     `;
 
     try {
-      await sendEmail({ to: email, subject: 'VexaStore Password Reset', html });
+      await sendResetEmail(email, resetLink);
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError.message);
     }
