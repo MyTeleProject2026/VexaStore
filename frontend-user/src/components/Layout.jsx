@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, Menu, X, Download, Smartphone, Phone, Monitor, Laptop, Terminal, 
   Home, User, LogIn, Settings, Heart, Clock, Zap
@@ -7,12 +7,14 @@ import { useState, useEffect } from 'react';
 
 export default function Layout() {
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ For route change detection
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
+  // ✅ Check auth state on mount AND on every route change
+  const checkAuth = () => {
     const token = localStorage.getItem('vexastore_user_token');
     const userData = localStorage.getItem('vexastore_user');
     if (token && userData) {
@@ -22,7 +24,20 @@ export default function Layout() {
       } catch (e) {
         console.error('Failed to parse user data');
       }
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
     }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, [location]); // ✅ Re-run when route changes
+
+  // Also listen to storage changes (if token is updated in another tab)
+  useEffect(() => {
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
   const handleSearch = (e) => {
@@ -39,6 +54,8 @@ export default function Layout() {
     setIsLoggedIn(false);
     setUser(null);
     navigate('/');
+    // Force re-check
+    checkAuth();
   };
 
   const categories = [
@@ -54,13 +71,10 @@ export default function Layout() {
       {/* Top Bar */}
       <header className="sticky top-0 z-40 bg-dark-card/95 backdrop-blur-xl border-b border-white/5 shadow-lg">
         <div className="px-4 py-2 flex items-center justify-between gap-2">
-          {/* ✅ LOGO – using <img> from public folder */}
           <NavLink to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img 
-              src="/vexastore-icon.svg" 
-              alt="VexaStore" 
-              className="w-8 h-8" 
-            />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 flex items-center justify-center border border-cyan-500/20">
+              <Download size={18} className="text-cyan-400" />
+            </div>
             <div>
               <span className="text-lg font-bold gradient-text">VexaStore</span>
             </div>
@@ -74,10 +88,14 @@ export default function Layout() {
               <Search size={20} />
             </button>
 
+            {/* ✅ Profile / Login button now redirects correctly */}
             {isLoggedIn ? (
-              <button className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition">
+              <NavLink
+                to="/profile"
+                className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition"
+              >
                 <User size={20} />
-              </button>
+              </NavLink>
             ) : (
               <NavLink
                 to="/login"
@@ -170,6 +188,25 @@ export default function Layout() {
                   <cat.icon size={20} className={cat.color} /> {cat.label}
                 </NavLink>
               ))}
+              {isLoggedIn && (
+                <>
+                  <NavLink to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                    <User size={20} /> Profile
+                  </NavLink>
+                  <NavLink to="/downloads" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                    <Download size={20} /> My Downloads
+                  </NavLink>
+                  <NavLink to="/favorites" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
+                    <Heart size={20} /> Favorites
+                  </NavLink>
+                  <button
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-left"
+                  >
+                    <LogIn size={20} /> Logout
+                  </button>
+                </>
+              )}
             </nav>
 
             <div className="absolute bottom-6 left-6 right-6 border-t border-white/5 pt-4">
