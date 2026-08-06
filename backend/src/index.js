@@ -15,7 +15,7 @@ const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
-
+const uploadRoutes = require('./routes/upload');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -71,6 +71,7 @@ app.use('/api/', limiter);
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+
 // ============================================================
 // API Routes
 // ============================================================
@@ -81,7 +82,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/settings', settingsRoutes);
-
+app.use('/api/upload', uploadRoutes);
 // ============================================================
 // Health Check
 // ============================================================
