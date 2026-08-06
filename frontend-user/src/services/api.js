@@ -10,9 +10,21 @@ export const api = axios.create({
   },
 });
 
+// ✅ Add this interceptor – attaches token to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('vexastore_user_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     const message = error.response?.data?.message || error.message || 'Something went wrong';
     return Promise.reject({ ...error, userMessage: message });
   }
