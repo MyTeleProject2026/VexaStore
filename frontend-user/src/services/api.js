@@ -23,7 +23,6 @@ export const getApiErrorMessage = (err) => {
 };
 
 export const authApi = {
-  // Auth
   login: (data) => api.post('/api/auth/login', data),
   register: (data) => api.post('/api/auth/register', data),
   verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
@@ -31,8 +30,6 @@ export const authApi = {
   googleLogin: (data) => api.post('/api/auth/google', data),
   forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
   resetPassword: (data) => api.post('/api/auth/reset-password', data),
-
-  // Profile (✅ Updated)
   getProfile: () => api.get('/api/auth/profile'),
   updateProfile: (data) => api.put('/api/auth/profile', data),
   updateProfileFull: (data) => api.put('/api/auth/profile/full', data),
