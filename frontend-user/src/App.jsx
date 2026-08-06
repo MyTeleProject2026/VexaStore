@@ -15,6 +15,8 @@ import Profile from './pages/Profile';
 import Downloads from './pages/Downloads';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Favorites from './pages/Favorites';        // ✅ New
+import Settings from './pages/Settings';          // ✅ New
 import { NotificationProvider } from './hooks/useNotification';
 
 function AppContent() {
@@ -71,6 +73,9 @@ function AppContent() {
           <Route path="downloads" element={<Downloads />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
+          {/* ✅ New routes */}
+          <Route path="favorites" element={<Favorites />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
