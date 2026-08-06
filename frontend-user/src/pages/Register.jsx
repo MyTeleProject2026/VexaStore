@@ -6,23 +6,19 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, CheckCircle, Shield, Send } f
 
 export default function Register() {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotification();
 
-  // Step 1: Form
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Step 2: OTP
-  const [step, setStep] = useState(1); // 1 = form, 2 = OTP
+  const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [userId, setUserId] = useState(null); // for OTP verification
-
-  // Step 3: Success
+  const [userId, setUserId] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,16 +40,27 @@ export default function Register() {
       const res = await authApi.register({ name, email, password });
       if (res.data?.success) {
         showSuccess('Account created! Please verify your email with the OTP sent.');
-        // Move to OTP step
         setStep(2);
         setUserId(res.data?.data?.id || null);
       }
     } catch (err) {
       const status = err.response?.status;
-      let msg = err.response?.data?.message || 'Registration failed';
-      if (status === 409) msg = 'Email already registered. Please login instead.';
-      else if (status === 500) msg = 'Server error. Please try again later.';
-      showError(msg);
+      const msg = err.response?.data?.message || 'Registration failed';
+      
+      // ✅ Handle 409 – Account exists but unverified → resend OTP and go to step 2
+      if (status === 409 && err.response?.data?.action === 'verify') {
+        showInfo('New OTP sent to your email. Please verify.');
+        setStep(2);
+        return;
+      }
+      
+      if (status === 409) {
+        showError('Email already registered. Please login instead.');
+      } else if (status === 500) {
+        showError('Server error. Please try again later.');
+      } else {
+        showError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -88,7 +95,8 @@ export default function Register() {
         showSuccess('OTP resent to your email.');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to resend OTP');
+      const msg = err.response?.data?.message || 'Failed to resend OTP';
+      showError(msg);
     } finally {
       setResending(false);
     }
@@ -97,7 +105,6 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
       <div className="glass-card max-w-md w-full p-6 relative overflow-hidden">
-        {/* Step indicator */}
         <div className="flex items-center justify-between mb-6">
           <button onClick={() => navigate('/')} className="text-slate-400 hover:text-white transition">
             <ArrowLeft size={20} />
@@ -183,16 +190,11 @@ export default function Register() {
                 className="btn-primary w-full py-3 flex justify-center items-center gap-2"
               >
                 {loading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
-                    Creating...
-                  </>
+                  <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  <>
-                    <Shield size={18} />
-                    Create Account
-                  </>
+                  <Shield size={18} />
                 )}
+                {loading ? 'Creating...' : 'Create Account'}
               </button>
             </form>
             <p className="mt-4 text-center text-sm text-slate-400">
