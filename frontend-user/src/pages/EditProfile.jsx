@@ -21,7 +21,9 @@ export default function EditProfile() {
         const user = JSON.parse(userData);
         setForm({ name: user.name || '', email: user.email || '' });
         setOriginalEmail(user.email || '');
-      } catch (e) {}
+      } catch (e) {
+        console.error('Failed to parse user data');
+      }
     }
   }, []);
 
@@ -33,18 +35,21 @@ export default function EditProfile() {
     }
     try {
       setLoading(true);
-      // Call backend to update profile
-      // For now, we'll update localStorage
-      const userData = localStorage.getItem('vexastore_user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        user.name = form.name.trim();
-        localStorage.setItem('vexastore_user', JSON.stringify(user));
+      // ✅ Call real API
+      const res = await authApi.updateProfile({ name: form.name.trim() });
+      if (res.data?.success) {
+        // Update localStorage
+        const userData = localStorage.getItem('vexastore_user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          user.name = res.data.user.name;
+          localStorage.setItem('vexastore_user', JSON.stringify(user));
+        }
+        showSuccess('Profile updated successfully!');
+        navigate('/profile');
       }
-      showSuccess('Profile updated successfully!');
-      navigate('/profile');
     } catch (err) {
-      showError(err.message || 'Failed to update profile');
+      showError(err.response?.data?.message || err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
