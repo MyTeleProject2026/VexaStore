@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // ✅ 60 seconds to avoid timeout
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,6 +30,9 @@ export const authApi = {
   googleLogin: (data) => api.post('/api/auth/google', data),
   forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
   resetPassword: (data) => api.post('/api/auth/reset-password', data),
+  // ✅ New methods
+  updateProfile: (data) => api.put('/api/auth/profile', data),
+  changePassword: (data) => api.post('/api/auth/change-password', data),
 };
 
 export const appApi = {
