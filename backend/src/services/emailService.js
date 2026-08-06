@@ -1,33 +1,16 @@
 const axios = require('axios');
 
-// ============================================================
-// Brevo API Configuration (more reliable than SMTP)
-// ============================================================
-const BREVO_API_KEY = process.env.SMTP_PASS; // Same as SMTP_PASS – it's the Brevo API key
+const BREVO_API_KEY = process.env.SMTP_PASS;
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'vexatradeblockchainecosystem@gmail.com';
 const FROM_NAME = process.env.MAIL_FROM_NAME || 'VexaTrade.inc';
 
-// ============================================================
-// Send Email via Brevo API
-// ============================================================
 async function sendEmail({ to, subject, html }) {
-  if (!BREVO_API_KEY || BREVO_API_KEY === 'xsmtpsib-...') {
-    console.warn('⚠️ Brevo API key not configured. Falling back to console log.');
-    console.log('📧 [FAKE EMAIL] To:', to);
-    console.log('📧 [FAKE EMAIL] Subject:', subject);
-    console.log('📧 [FAKE EMAIL] Body:', html);
-    return true;
-  }
-
   try {
     const response = await axios.post(
       BREVO_API_URL,
       {
-        sender: {
-          name: FROM_NAME,
-          email: FROM_EMAIL,
-        },
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
         to: [{ email: to }],
         subject: subject,
         htmlContent: html,
@@ -37,17 +20,13 @@ async function sendEmail({ to, subject, html }) {
           'Content-Type': 'application/json',
           'api-key': BREVO_API_KEY,
         },
-        timeout: 30000, // 30 seconds timeout
+        timeout: 30000,
       }
     );
-
-    console.log('✅ Email sent via Brevo API to:', to, 'Message ID:', response.data.messageId);
+    console.log('✅ Email sent via Brevo API to:', to);
     return true;
   } catch (error) {
     console.error('❌ Brevo API error:', error.response?.data || error.message);
-    // Fallback: log to console
-    console.log('📧 [FALLBACK] To:', to);
-    console.log('📧 [FALLBACK] Subject:', subject);
     return false;
   }
 }
