@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
-// ✅ Admin authentication
+// ✅ Admin authentication (existing)
 const authAdmin = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
