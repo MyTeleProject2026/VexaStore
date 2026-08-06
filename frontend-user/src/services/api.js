@@ -52,7 +52,8 @@ export const authApi = {
   resendVerification: () => api.post('/api/auth/resend-verification'),
 
   // 2FA
-  enable2FA: (secret) => api.post('/api/auth/twofa/enable', { secret }),
+  generate2FA: () => api.post('/api/auth/twofa/generate'),
+  verifyEnable2FA: (data) => api.post('/api/auth/twofa/verify-enable', data),
   disable2FA: () => api.post('/api/auth/twofa/disable'),
 
   // Data & Privacy
