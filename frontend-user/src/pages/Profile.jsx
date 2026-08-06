@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { User, Mail, LogOut, ArrowLeft, Download, Heart } from 'lucide-react';
+import { User, Mail, LogOut, ArrowLeft, Download, Heart, Settings, Shield, Edit } from 'lucide-react';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -13,9 +13,7 @@ export default function Profile() {
     if (userData) {
       try {
         setUser(JSON.parse(userData));
-      } catch (e) {
-        console.error('Failed to parse user data');
-      }
+      } catch (e) {}
     }
   }, []);
 
@@ -70,6 +68,18 @@ export default function Profile() {
         <Link to="/favorites" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition">
           <Heart size={18} className="text-cyan-400" />
           <span className="text-white">Favorites</span>
+        </Link>
+        <Link to="/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition">
+          <Settings size={18} className="text-cyan-400" />
+          <span className="text-white">Settings</span>
+        </Link>
+        <Link to="/profile/edit" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition">
+          <Edit size={18} className="text-cyan-400" />
+          <span className="text-white">Edit Profile</span>
+        </Link>
+        <Link to="/change-password" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition">
+          <Shield size={18} className="text-cyan-400" />
+          <span className="text-white">Change Password</span>
         </Link>
       </div>
 
