@@ -246,7 +246,7 @@ export default function Profile() {
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3"
               >
                 {saving ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <Save size={18} />}
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -280,7 +280,7 @@ export default function Profile() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: Security (Linked to Settings Pages) */}
+      {/* TAB 2: Security */}
       {/* ============================================================ */}
       {activeTab === 'security' && (
         <div className="glass-card p-6 space-y-4">
@@ -306,7 +306,7 @@ export default function Profile() {
               </p>
             </div>
             <Link to="/settings/2fa" className="text-cyan-400 hover:underline text-sm">
-              {twofaEnabled ? 'Manage' : 'Set up'}
+              {twofaEnabled ? 'Manage 2FA' : 'Set up 2FA'}
             </Link>
           </div>
 
@@ -330,7 +330,7 @@ export default function Profile() {
                 }}
                 className="text-cyan-400 hover:underline text-sm"
               >
-                Resend
+                Resend Verification
               </button>
             )}
           </div>
@@ -342,14 +342,14 @@ export default function Profile() {
               <p className="text-sm text-slate-400">Manage sessions</p>
             </div>
             <Link to="/settings/devices" className="text-cyan-400 hover:underline text-sm">
-              View
+              View Devices
             </Link>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 3: Privacy & Data (Linked to Settings Pages) */}
+      {/* TAB 3: Privacy & Data */}
       {/* ============================================================ */}
       {activeTab === 'privacy' && (
         <div className="glass-card p-6 space-y-4">
@@ -362,7 +362,7 @@ export default function Profile() {
               <p className="text-sm text-slate-400">Download your account data as JSON</p>
             </div>
             <Link to="/settings/export" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
-              <Download size={14} /> Export
+              <Download size={14} /> Export Data
             </Link>
           </div>
 
@@ -373,7 +373,7 @@ export default function Profile() {
               <p className="text-sm text-red-400">Permanently delete your data</p>
             </div>
             <Link to="/settings/delete" className="text-red-400 hover:underline text-sm flex items-center gap-1">
-              <Trash2 size={14} /> Delete
+              <Trash2 size={14} /> Delete Account
             </Link>
           </div>
 
@@ -384,20 +384,20 @@ export default function Profile() {
               <p className="text-sm text-slate-400">Review your recent activity</p>
             </div>
             <Link to="/settings/activity" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
-              <Activity size={14} /> View
+              <Activity size={14} /> View Activity
             </Link>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 4: Connected Apps (Linked to Settings Page) */}
+      {/* TAB 4: Connected Apps */}
       {/* ============================================================ */}
       {activeTab === 'apps' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Connected Apps</h2>
           <p className="text-sm text-slate-400">
-            Apps and services that use your VexaAccount. One account for all Vexa apps.
+            Apps and services that use your VexaAccount.
           </p>
           
           <div className="space-y-3">
