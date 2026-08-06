@@ -272,4 +272,136 @@ export default function Profile() {
 
         {activeTab === 'security' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white">Security</h
+            <h2 className="text-lg font-semibold text-white">Security</h2>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div>
+                <p className="text-white font-medium">Password</p>
+                <p className="text-sm text-slate-400">Last changed: —</p>
+              </div>
+              <Link to="/change-password" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
+                Change <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div>
+                <p className="text-white font-medium">Two‑Factor Authentication</p>
+                <p className="text-sm text-slate-400">Add extra security</p>
+              </div>
+              <button className="text-cyan-400 hover:underline text-sm">Set up</button>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div>
+                <p className="text-white font-medium">Email Verification</p>
+                <p className="text-sm text-slate-400">{user.is_verified ? 'Verified' : 'Not verified'}</p>
+              </div>
+              {!user.is_verified && (
+                <button className="text-cyan-400 hover:underline text-sm">Resend verification</button>
+              )}
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-white font-medium">Connected Devices</p>
+                <p className="text-sm text-slate-400">Manage sessions</p>
+              </div>
+              <button className="text-cyan-400 hover:underline text-sm">View</button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'privacy' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-white">Privacy & Data</h2>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div>
+                <p className="text-white font-medium">Data Export</p>
+                <p className="text-sm text-slate-400">Download your account data</p>
+              </div>
+              <button className="text-cyan-400 hover:underline text-sm">Export</button>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div>
+                <p className="text-white font-medium">Delete Account</p>
+                <p className="text-sm text-red-400">Permanently delete your data</p>
+              </div>
+              <button className="text-red-400 hover:underline text-sm">Delete</button>
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-white font-medium">Activity Log</p>
+                <p className="text-sm text-slate-400">Review your recent activity</p>
+              </div>
+              <button className="text-cyan-400 hover:underline text-sm">View</button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'apps' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-white">Connected Apps</h2>
+            <p className="text-sm text-slate-400">
+              Apps and services that use your VexaStore account.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-3 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <Smartphone size={20} className="text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">VexaStore</p>
+                    <p className="text-xs text-slate-400">This app • Active</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
+              </div>
+              <div className="flex items-center justify-between py-3 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <Wallet size={20} className="text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">VexaWallet</p>
+                    <p className="text-xs text-slate-400">Coming soon</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+              <div className="flex items-center justify-between py-3 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <Globe size={20} className="text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">VexaBrowser</p>
+                    <p className="text-xs text-slate-400">Coming soon</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <Mail size={20} className="text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">VexaEmail</p>
+                    <p className="text-xs text-slate-400">Coming soon</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Logout button */}
+      <button
+        onClick={handleLogout}
+        className="btn-danger w-full flex items-center justify-center gap-2 py-3"
+      >
+        <LogOut size={18} /> Logout
+      </button>
+    </div>
+  );
+}
