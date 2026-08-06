@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
-// ✅ Import authUser middleware
 const { authUser } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
@@ -14,7 +13,7 @@ function generateOTP() {
 }
 
 // ============================================================
-// POST: Register (Email/Password)
+// POST: Register
 // ============================================================
 router.post('/register', async (req, res, next) => {
   const start = Date.now();
@@ -177,7 +176,7 @@ router.post('/resend-otp', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Login (Email/Password)
+// POST: Login
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -359,43 +358,84 @@ router.post('/reset-password', async (req, res, next) => {
 });
 
 // ============================================================
-// PUT: Update User Profile (Name only) – NEW
+// GET: User Profile (Full)
 // ============================================================
-router.put('/profile', authUser, async (req, res, next) => {
+router.get('/profile', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, message: 'Name is required' });
-    }
-
-    const [result] = await pool.query(
-      'UPDATE store_users SET name = ? WHERE id = ?',
-      [name.trim(), userId]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
     const [rows] = await pool.query(
-      'SELECT id, email, name, is_verified, is_active FROM store_users WHERE id = ?',
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, updated_at FROM store_users WHERE id = ?',
       [userId]
     );
-
-    res.json({
-      success: true,
-      message: 'Profile updated successfully',
-      user: rows[0]
-    });
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.json({ success: true, user: rows[0] });
   } catch (error) {
     next(error);
   }
 });
 
 // ============================================================
-// POST: Change Password – NEW
+// PUT: Update Profile (Name, Phone, Bio)
+// ============================================================
+router.put('/profile/full', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { name, phone, bio } = req.body;
+
+    const updates = [];
+    const values = [];
+    if (name !== undefined) { updates.push('name = ?'); values.push(name.trim()); }
+    if (phone !== undefined) { updates.push('phone = ?'); values.push(phone); }
+    if (bio !== undefined) { updates.push('bio = ?'); values.push(bio); }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    values.push(userId);
+    await pool.query(
+      `UPDATE store_users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    const [rows] = await pool.query(
+      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, updated_at FROM store_users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({ success: true, message: 'Profile updated', user: rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// PUT: Update Profile Picture
+// ============================================================
+router.put('/profile/picture', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { avatar_url } = req.body;
+
+    if (!avatar_url) {
+      return res.status(400).json({ success: false, message: 'Avatar URL is required' });
+    }
+
+    await pool.query(
+      'UPDATE store_users SET avatar_url = ? WHERE id = ?',
+      [avatar_url, userId]
+    );
+
+    res.json({ success: true, message: 'Profile picture updated', avatar_url });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================
+// PUT: Change Password
 // ============================================================
 router.post('/change-password', authUser, async (req, res, next) => {
   try {
