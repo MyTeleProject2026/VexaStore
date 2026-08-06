@@ -23,15 +23,49 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All fields required' });
     }
 
+    // ✅ Check if user exists
     const [existing] = await connection.query(
-      'SELECT id FROM store_users WHERE email = ?',
+      'SELECT id, is_verified FROM store_users WHERE email = ?',
       [email.trim().toLowerCase()]
     );
+
     if (existing.length) {
-      console.log('⏱️ Duplicate check took:', Date.now() - start, 'ms');
-      return res.status(409).json({ success: false, message: 'Email already registered' });
+      const user = existing[0];
+      
+      // ✅ If user exists but is NOT verified → resend OTP
+      if (user.is_verified === 0) {
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        
+        // Delete old OTPs for this user
+        await connection.query(
+          'DELETE FROM otp_codes WHERE user_id = ? AND purpose = "email_verification"',
+          [user.id]
+        );
+        
+        await connection.query(
+          `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
+          [user.id, otp, expiresAt]
+        );
+        
+        try {
+          await sendOtpEmail(email, otp);
+        } catch (emailError) {
+          console.error('❌ Failed to send OTP email:', emailError.message);
+        }
+        
+        return res.status(409).json({
+          success: false,
+          message: 'Account already registered but not verified. New OTP sent to your email.',
+          action: 'verify' // ✅ Frontend can use this to redirect
+        });
+      }
+      
+      // ✅ User exists and IS verified
+      return res.status(409).json({ success: false, message: 'Email already registered. Please login.' });
     }
 
+    // ✅ New user – create account
     const hashed = await bcrypt.hash(password, 10);
     const [result] = await connection.query(
       `INSERT INTO store_users (email, password, name, is_verified) VALUES (?, ?, ?, 0)`,
@@ -45,16 +79,18 @@ router.post('/register', async (req, res, next) => {
       [result.insertId, otp, expiresAt]
     );
 
-    // Send OTP email via Brevo REST API
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
       console.error('❌ Failed to send OTP email:', emailError.message);
-      // Continue – user can resend OTP later
     }
 
     console.log('⏱️ Registration completed in:', Date.now() - start, 'ms');
-    res.json({ success: true, message: 'Registration successful. Please verify your email with OTP.' });
+    res.json({
+      success: true,
+      message: 'Registration successful. Please verify your email with OTP.',
+      data: { id: result.insertId }
+    });
   } catch (error) {
     console.error('❌ Registration error:', error);
     next(error);
@@ -114,26 +150,39 @@ router.post('/resend-otp', async (req, res, next) => {
     if (!email) return res.status(400).json({ success: false, message: 'Email required' });
 
     const [userRows] = await connection.query(
-      'SELECT id, email FROM store_users WHERE email = ?',
+      'SELECT id, is_verified FROM store_users WHERE email = ?',
       [email.trim().toLowerCase()]
     );
     if (!userRows.length) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    if (userRows[0].is_verified === 1) {
+      return res.status(400).json({ success: false, message: 'Email already verified. Please login.' });
+    }
+
+    const userId = userRows[0].id;
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    
+    // Delete old OTPs
+    await connection.query(
+      'DELETE FROM otp_codes WHERE user_id = ? AND purpose = "email_verification"',
+      [userId]
+    );
+    
     await connection.query(
       `INSERT INTO otp_codes (user_id, otp_code, purpose, expires_at) VALUES (?, ?, 'email_verification', ?)`,
-      [userRows[0].id, otp, expiresAt]
+      [userId, otp, expiresAt]
     );
+    
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
       console.error('❌ Failed to resend OTP email:', emailError.message);
     }
 
-    res.json({ success: true, message: 'OTP resent' });
+    res.json({ success: true, message: 'OTP resent to your email.' });
   } catch (error) {
     next(error);
   } finally {
@@ -248,7 +297,6 @@ router.post('/forgot-password', async (req, res, next) => {
       [email.trim().toLowerCase()]
     );
     if (!rows.length) {
-      // For security, don't reveal if email exists
       return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
     }
 
@@ -268,12 +316,10 @@ router.post('/forgot-password', async (req, res, next) => {
 
     const resetLink = `${process.env.FRONTEND_USER_URL || 'https://vexastore.onrender.com'}/reset-password?token=${resetToken}`;
 
-    // Send reset email via Brevo REST API
     try {
       await sendResetEmail(email, resetLink);
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError.message);
-      // Still return success to avoid leaking email existence
     }
 
     res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
@@ -296,14 +342,12 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
 
-    // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
-
     if (decoded.purpose !== 'password_reset') {
       return res.status(400).json({ success: false, message: 'Invalid token purpose' });
     }
@@ -316,18 +360,9 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
 
-    // Update password
     const hashed = await bcrypt.hash(newPassword, 10);
-    await connection.query(
-      'UPDATE store_users SET password = ? WHERE id = ?',
-      [hashed, decoded.id]
-    );
-
-    // Mark token as used
-    await connection.query(
-      'UPDATE otp_codes SET is_used = 1 WHERE id = ?',
-      [otpRows[0].id]
-    );
+    await connection.query('UPDATE store_users SET password = ? WHERE id = ?', [hashed, decoded.id]);
+    await connection.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [otpRows[0].id]);
 
     res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
