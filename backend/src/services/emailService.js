@@ -1,72 +1,59 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 // ============================================================
-// SMTP Configuration (from environment variables)
+// Brevo API Configuration (more reliable than SMTP)
 // ============================================================
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
-const SMTP_USER = process.env.SMTP_USER; // Your SMTP username (e.g., Brevo login email)
-const SMTP_PASS = process.env.SMTP_PASS; // Your SMTP password or API key
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@vexastore.com';
-const FROM_NAME = process.env.MAIL_FROM_NAME || 'VexaStore';
+const BREVO_API_KEY = process.env.SMTP_PASS; // Same as SMTP_PASS – it's the Brevo API key
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'vexatradeblockchainecosystem@gmail.com';
+const FROM_NAME = process.env.MAIL_FROM_NAME || 'VexaTrade.inc';
 
 // ============================================================
-// Transporter – Reusable SMTP connection
-// ============================================================
-let transporter = null;
-
-function getTransporter() {
-  if (transporter) return transporter;
-
-  // Use SMTP if configured
-  if (SMTP_USER && SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465, // 465 = SSL, 587 = TLS
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
-      },
-    });
-    console.log('✅ SMTP transporter initialized with:', SMTP_HOST);
-  } else {
-    // Fallback: console logging (for development/testing)
-    console.warn('⚠️ SMTP not configured. Emails will be logged to console.');
-    transporter = {
-      sendMail: (mailOptions) => {
-        console.log('📧 [FAKE EMAIL] To:', mailOptions.to);
-        console.log('📧 [FAKE EMAIL] Subject:', mailOptions.subject);
-        console.log('📧 [FAKE EMAIL] Body:', mailOptions.html);
-        return Promise.resolve();
-      }
-    };
-  }
-  return transporter;
-}
-
-// ============================================================
-// Send Email – Main function
+// Send Email via Brevo API
 // ============================================================
 async function sendEmail({ to, subject, html }) {
-  const transporter = getTransporter();
+  if (!BREVO_API_KEY || BREVO_API_KEY === 'xsmtpsib-...') {
+    console.warn('⚠️ Brevo API key not configured. Falling back to console log.');
+    console.log('📧 [FAKE EMAIL] To:', to);
+    console.log('📧 [FAKE EMAIL] Subject:', subject);
+    console.log('📧 [FAKE EMAIL] Body:', html);
+    return true;
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-      to,
-      subject,
-      html
-    });
-    console.log('✅ Email sent to:', to, 'Message ID:', info.messageId);
+    const response = await axios.post(
+      BREVO_API_URL,
+      {
+        sender: {
+          name: FROM_NAME,
+          email: FROM_EMAIL,
+        },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': BREVO_API_KEY,
+        },
+        timeout: 30000, // 30 seconds timeout
+      }
+    );
+
+    console.log('✅ Email sent via Brevo API to:', to, 'Message ID:', response.data.messageId);
     return true;
   } catch (error) {
-    console.error('❌ Email send failed:', error.message);
+    console.error('❌ Brevo API error:', error.response?.data || error.message);
+    // Fallback: log to console
+    console.log('📧 [FALLBACK] To:', to);
+    console.log('📧 [FALLBACK] Subject:', subject);
     return false;
   }
 }
 
 // ============================================================
-// Send OTP Email – Verification code
+// Send OTP Email
 // ============================================================
 async function sendOtpEmail(to, otp) {
   const html = `
@@ -83,6 +70,20 @@ async function sendOtpEmail(to, otp) {
 }
 
 // ============================================================
-// Export functions
+// Send Password Reset Email
 // ============================================================
-module.exports = { sendEmail, sendOtpEmail };
+async function sendResetEmail(to, resetLink) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
+      <h2 style="margin:0 0 16px;">Reset Your Password</h2>
+      <p style="margin:0 0 16px;">Click the link below to reset your password. This link expires in 1 hour.</p>
+      <a href="${resetLink}" style="display: inline-block; background: #06b6d4; color: #000000; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: bold; margin: 16px 0;">
+        Reset Password
+      </a>
+      <p style="margin:16px 0 0; color:#cbd5e1;">If you didn't request this, please ignore this email.</p>
+    </div>
+  `;
+  return sendEmail({ to, subject: 'VexaStore Password Reset', html });
+}
+
+module.exports = { sendEmail, sendOtpEmail, sendResetEmail };
