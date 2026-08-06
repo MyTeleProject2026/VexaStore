@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
-
+const { authAdmin, authUser } = require('../middleware/auth');
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
 function generateOTP() {
