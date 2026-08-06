@@ -8,7 +8,7 @@ import {
   ChevronRight, CheckCircle, Edit2, 
   ArrowLeft, Database, 
   Clock, Layers, Key, Eye, EyeOff, Save,
-  Download, Trash2, Activity
+  Download, Trash2, Activity, TrendingUp, Wallet
 } from 'lucide-react';
 
 export default function Profile() {
@@ -22,9 +22,12 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(false);
+  const [connectedApps, setConnectedApps] = useState([]);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     fetchProfile();
+    fetchConnectedApps();
   }, []);
 
   const fetchProfile = async () => {
@@ -39,14 +42,36 @@ export default function Profile() {
           phone: res.data.user.phone || '',
           bio: res.data.user.bio || '',
         });
-      } else {
-        showError(res.data?.message || 'Failed to load profile');
       }
     } catch (err) {
       console.error('Profile fetch error:', err.response?.data || err.message);
       showError(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchConnectedApps = async () => {
+    try {
+      const res = await authApi.getConnectedApps();
+      if (res.data?.success) {
+        setConnectedApps(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Connected apps fetch error:', err);
+    }
+  };
+
+  const handleConnectApp = async (appName, appSlug) => {
+    try {
+      setConnecting(true);
+      await authApi.connectApp({ app_name: appName, app_slug: appSlug });
+      showSuccess(`${appName} connected successfully!`);
+      await fetchConnectedApps();
+    } catch (err) {
+      showError(err.response?.data?.message || 'Failed to connect app');
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -212,6 +237,11 @@ export default function Profile() {
     );
   }
 
+  // Check if an app is connected
+  const isAppConnected = (slug) => {
+    return connectedApps.some(app => app.app_slug === slug && app.status === 'connected');
+  };
+
   return (
     <div className="space-y-6">
       <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition">
@@ -363,13 +393,12 @@ export default function Profile() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: Security (with 2FA) */}
+      {/* TAB 2: Security */}
       {/* ============================================================ */}
       {activeTab === 'security' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Security</h2>
           
-          {/* Password */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Password</p>
@@ -380,7 +409,6 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* 2FA - ✅ FULLY WORKING */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Two‑Factor Authentication</p>
@@ -389,23 +417,12 @@ export default function Profile() {
               </p>
             </div>
             {twofaEnabled ? (
-              <button
-                onClick={handleDisable2FA}
-                className="text-red-400 hover:underline text-sm"
-              >
-                Disable
-              </button>
+              <button onClick={handleDisable2FA} className="text-red-400 hover:underline text-sm">Disable</button>
             ) : (
-              <button
-                onClick={handleEnable2FA}
-                className="text-cyan-400 hover:underline text-sm"
-              >
-                Set up
-              </button>
+              <button onClick={handleEnable2FA} className="text-cyan-400 hover:underline text-sm">Set up</button>
             )}
           </div>
 
-          {/* Email Verification */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Email Verification</p>
@@ -430,67 +447,49 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Connected Devices - ✅ WORKING */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Connected Devices</p>
               <p className="text-sm text-slate-400">Manage sessions</p>
             </div>
-            <button
-              onClick={handleViewSessions}
-              className="text-cyan-400 hover:underline text-sm"
-            >
-              View
-            </button>
+            <button onClick={handleViewSessions} className="text-cyan-400 hover:underline text-sm">View</button>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 3: Privacy & Data (with Export & Delete) */}
+      {/* TAB 3: Privacy & Data */}
       {/* ============================================================ */}
       {activeTab === 'privacy' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Privacy & Data</h2>
 
-          {/* Data Export - ✅ FULLY WORKING */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Data Export</p>
               <p className="text-sm text-slate-400">Download your account data as JSON</p>
             </div>
-            <button
-              onClick={handleExportData}
-              className="text-cyan-400 hover:underline text-sm flex items-center gap-1"
-            >
+            <button onClick={handleExportData} className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               <Download size={14} /> Export
             </button>
           </div>
 
-          {/* Delete Account - ✅ FULLY WORKING */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Delete Account</p>
               <p className="text-sm text-red-400">Permanently delete your data</p>
             </div>
-            <button
-              onClick={handleDeleteAccount}
-              className="text-red-400 hover:underline text-sm flex items-center gap-1"
-            >
+            <button onClick={handleDeleteAccount} className="text-red-400 hover:underline text-sm flex items-center gap-1">
               <Trash2 size={14} /> Delete
             </button>
           </div>
 
-          {/* Activity Log - ✅ FULLY WORKING */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Activity Log</p>
               <p className="text-sm text-slate-400">Review your recent activity</p>
             </div>
-            <button
-              onClick={handleViewActivity}
-              className="text-cyan-400 hover:underline text-sm flex items-center gap-1"
-            >
+            <button onClick={handleViewActivity} className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               <Activity size={14} /> View
             </button>
           </div>
@@ -498,47 +497,112 @@ export default function Profile() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 4: Connected Apps */}
+      {/* TAB 4: Connected Apps - FULLY FUNCTIONAL */}
       {/* ============================================================ */}
       {activeTab === 'apps' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Connected Apps</h2>
           <p className="text-sm text-slate-400">
-            Apps and services that use your VexaStore account.
+            Apps and services that use your VexaAccount. One account for all Vexa apps.
           </p>
+          
           <div className="space-y-3">
-            {[
-              { name: 'VexaStore', icon: Smartphone, status: 'Connected', color: 'emerald' },
-              { name: 'VexaWallet', icon: Wallet, status: 'Coming soon', color: 'slate' },
-              { name: 'VexaBrowser', icon: Globe, status: 'Coming soon', color: 'slate' },
-              { name: 'VexaEmail', icon: Mail, status: 'Coming soon', color: 'slate' },
-            ].map((app) => (
-              <div key={app.name} className="flex items-center justify-between py-3 border-b border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                    <app.icon size={20} className="text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{app.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {app.status === 'Connected' ? 'Active' : 'Coming soon'}
-                    </p>
-                  </div>
+            {/* VexaStore - Always connected */}
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <Smartphone size={20} className="text-cyan-400" />
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  app.status === 'Connected'
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-slate-500/20 text-slate-300'
-                }`}>
-                  {app.status}
-                </span>
+                <div>
+                  <p className="text-white font-medium">VexaStore</p>
+                  <p className="text-xs text-slate-400">This app • Active</p>
+                </div>
               </div>
-            ))}
+              <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
+            </div>
+
+            {/* VexaTrade */}
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <TrendingUp size={20} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">VexaTrade</p>
+                  <p className="text-xs text-slate-400">
+                    Crypto Trading Platform • {isAppConnected('vexatrade') ? 'Connected' : 'Connect to use'}
+                  </p>
+                </div>
+              </div>
+              {isAppConnected('vexatrade') ? (
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
+              ) : (
+                <button
+                  onClick={() => handleConnectApp('VexaTrade', 'vexatrade')}
+                  disabled={connecting}
+                  className="text-cyan-400 hover:underline text-sm disabled:opacity-50"
+                >
+                  {connecting ? 'Connecting...' : 'Connect'}
+                </button>
+              )}
+            </div>
+
+            {/* VexaWallet */}
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <Wallet size={20} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">VexaWallet</p>
+                  <p className="text-xs text-slate-400">Coming soon</p>
+                </div>
+              </div>
+              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+            </div>
+
+            {/* VexaEmail */}
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <Mail size={20} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">VexaEmail</p>
+                  <p className="text-xs text-slate-400">Coming soon</p>
+                </div>
+              </div>
+              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+            </div>
+
+            {/* VexaBrowser */}
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                  <Globe size={20} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">VexaBrowser</p>
+                  <p className="text-xs text-slate-400">Coming soon</p>
+                </div>
+              </div>
+              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div className="mt-4 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+            <p className="text-sm text-slate-400">
+              💡 <span className="text-white font-medium">One Account, All Vexa Apps</span>
+              <br />
+              Your VexaAccount works across VexaStore, VexaTrade, VexaWallet, VexaEmail, and VexaBrowser.
+              No need to create separate accounts!
+            </p>
           </div>
         </div>
       )}
 
-      {/* Logout button */}
+      {/* Logout */}
       <button
         onClick={handleLogout}
         className="btn-danger w-full flex items-center justify-center gap-2 py-3"
