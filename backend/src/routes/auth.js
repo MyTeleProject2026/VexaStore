@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
 const { authUser } = require('../middleware/auth');
+const { authenticator } = require('otplib');
+const QRCode = require('qrcode');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
@@ -516,31 +518,61 @@ router.post('/resend-verification', authUser, async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Enable 2FA
+// 2FA: Generate Secret & QR Code
 // ============================================================
-router.post('/twofa/enable', authUser, async (req, res, next) => {
+router.post('/twofa/generate', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { secret } = req.body;
+    const email = req.user.email;
 
-    const twofaSecret = secret || Math.random().toString(36).substring(2, 15);
-    const twofaBackupCodes = Array.from({ length: 8 }, () => 
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(email, 'VexaStore', secret);
+    const qrCode = await QRCode.toDataURL(otpauth);
+
+    res.json({
+      success: true,
+      secret,
+      qrCode,
+    });
+  } catch (error) {
+    console.error('❌ 2FA generate error:', error);
+    next(error);
+  }
+});
+
+// ============================================================
+// 2FA: Verify & Enable
+// ============================================================
+router.post('/twofa/verify-enable', authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { secret, token } = req.body;
+
+    if (!secret || !token) {
+      return res.status(400).json({ success: false, message: 'Secret and token required' });
+    }
+
+    const isValid = authenticator.verify({ token, secret });
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code' });
+    }
+
+    const backupCodes = Array.from({ length: 8 }, () =>
       Math.random().toString(36).substring(2, 8).toUpperCase()
     );
 
     await pool.query(
       'UPDATE store_users SET twofa_enabled = 1, twofa_secret = ?, twofa_backup_codes = ? WHERE id = ?',
-      [twofaSecret, JSON.stringify(twofaBackupCodes), userId]
+      [secret, JSON.stringify(backupCodes), userId]
     );
 
     res.json({
       success: true,
       message: '2FA enabled successfully',
-      secret: twofaSecret,
-      backup_codes: twofaBackupCodes,
+      backupCodes,
     });
   } catch (error) {
-    console.error('❌ 2FA enable error:', error);
+    console.error('❌ 2FA verify-enable error:', error);
     next(error);
   }
 });
@@ -562,7 +594,7 @@ router.post('/twofa/disable', authUser, async (req, res, next) => {
 });
 
 // ============================================================
-// GET: Sessions (Connected Devices)
+// GET: Sessions
 // ============================================================
 router.get('/sessions', authUser, async (req, res, next) => {
   try {
@@ -681,9 +713,7 @@ router.get('/connected-apps', authUser, async (req, res, next) => {
       [userId]
     );
     
-    // If no apps found, return default list with VexaStore connected
     if (!rows.length) {
-      // Auto-connect VexaStore for this user
       await pool.query(
         `INSERT INTO user_connected_apps (user_id, app_name, app_slug, status, connected_at, last_used_at)
          VALUES (?, 'VexaStore', 'vexastore', 'connected', NOW(), NOW())`,
