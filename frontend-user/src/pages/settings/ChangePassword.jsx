@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
 import { authApi } from '../../services/api';
-import { Lock, Eye, EyeOff, ArrowLeft, Save } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowLeft, Save, Key } from 'lucide-react';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function ChangePassword() {
         <div className="glass-card p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-              <Lock size={20} className="text-cyan-400" />
+              <Key size={20} className="text-cyan-400" />
             </div>
             <h1 className="text-2xl font-bold text-white">Change Password</h1>
           </div>
@@ -116,7 +116,7 @@ export default function ChangePassword() {
               className="btn-primary w-full py-3 flex justify-center items-center gap-2"
             >
               {loading ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <Save size={18} />}
-              {loading ? 'Updating...' : 'Change Password'}
+              {loading ? 'Updating...' : 'Update Password'}
             </button>
           </form>
         </div>
