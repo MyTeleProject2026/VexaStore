@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
-const { testConnection } = require('./config/database');
+const { testConnection, pool } = require('./config/database');
 
 // Routes
 const appRoutes = require('./routes/apps');
@@ -117,6 +117,25 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
+
+// ============================================================
+// Cleanup: Delete unverified users after 1 hour
+// ============================================================
+setInterval(async () => {
+  try {
+    const connection = await pool.getConnection();
+    // Delete unverified users older than 1 hour
+    const [result] = await connection.query(
+      `DELETE FROM store_users WHERE is_verified = 0 AND created_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)`
+    );
+    connection.release();
+    if (result.affectedRows > 0) {
+      console.log(`🧹 Cleaned up ${result.affectedRows} unverified users`);
+    }
+  } catch (error) {
+    console.error('❌ Cleanup error:', error.message);
+  }
+}, 60 * 60 * 1000); // Run every hour
 
 // ============================================================
 // Start Server
