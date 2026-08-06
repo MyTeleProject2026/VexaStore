@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
+
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
 
 function generateOTP() {
@@ -11,7 +12,7 @@ function generateOTP() {
 }
 
 // ============================================================
-// POST: Register
+// POST: Register (Email/Password)
 // ============================================================
 router.post('/register', async (req, res, next) => {
   const start = Date.now();
@@ -44,11 +45,12 @@ router.post('/register', async (req, res, next) => {
       [result.insertId, otp, expiresAt]
     );
 
-    // Send OTP (fake email – logs to console)
+    // Send OTP email via Brevo REST API
     try {
       await sendOtpEmail(email, otp);
     } catch (emailError) {
       console.error('❌ Failed to send OTP email:', emailError.message);
+      // Continue – user can resend OTP later
     }
 
     console.log('⏱️ Registration completed in:', Date.now() - start, 'ms');
@@ -140,7 +142,7 @@ router.post('/resend-otp', async (req, res, next) => {
 });
 
 // ============================================================
-// POST: Login
+// POST: Login (Email/Password)
 // ============================================================
 router.post('/login', async (req, res, next) => {
   try {
@@ -246,6 +248,7 @@ router.post('/forgot-password', async (req, res, next) => {
       [email.trim().toLowerCase()]
     );
     if (!rows.length) {
+      // For security, don't reveal if email exists
       return res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
     }
 
@@ -264,21 +267,13 @@ router.post('/forgot-password', async (req, res, next) => {
     );
 
     const resetLink = `${process.env.FRONTEND_USER_URL || 'https://vexastore.onrender.com'}/reset-password?token=${resetToken}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
-        <h2>Reset Your Password</h2>
-        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-        <a href="${resetLink}" style="display: inline-block; background: #06b6d4; color: #000000; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: bold; margin: 16px 0;">
-          Reset Password
-        </a>
-        <p>If you didn't request this, please ignore this email.</p>
-      </div>
-    `;
 
+    // Send reset email via Brevo REST API
     try {
       await sendResetEmail(email, resetLink);
     } catch (emailError) {
       console.error('❌ Failed to send reset email:', emailError.message);
+      // Still return success to avoid leaking email existence
     }
 
     res.json({ success: true, message: 'If your email is registered, you will receive a reset link.' });
@@ -301,12 +296,14 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
 
+    // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
+
     if (decoded.purpose !== 'password_reset') {
       return res.status(400).json({ success: false, message: 'Invalid token purpose' });
     }
@@ -319,9 +316,18 @@ router.post('/reset-password', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
 
+    // Update password
     const hashed = await bcrypt.hash(newPassword, 10);
-    await connection.query('UPDATE store_users SET password = ? WHERE id = ?', [hashed, decoded.id]);
-    await connection.query('UPDATE otp_codes SET is_used = 1 WHERE id = ?', [otpRows[0].id]);
+    await connection.query(
+      'UPDATE store_users SET password = ? WHERE id = ?',
+      [hashed, decoded.id]
+    );
+
+    // Mark token as used
+    await connection.query(
+      'UPDATE otp_codes SET is_used = 1 WHERE id = ?',
+      [otpRows[0].id]
+    );
 
     res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
