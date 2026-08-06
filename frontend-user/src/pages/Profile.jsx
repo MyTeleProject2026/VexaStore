@@ -22,12 +22,9 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(false);
-  const [connectedApps, setConnectedApps] = useState([]);
-  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     fetchProfile();
-    fetchConnectedApps();
   }, []);
 
   const fetchProfile = async () => {
@@ -42,36 +39,14 @@ export default function Profile() {
           phone: res.data.user.phone || '',
           bio: res.data.user.bio || '',
         });
+      } else {
+        showError(res.data?.message || 'Failed to load profile');
       }
     } catch (err) {
       console.error('Profile fetch error:', err.response?.data || err.message);
       showError(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchConnectedApps = async () => {
-    try {
-      const res = await authApi.getConnectedApps();
-      if (res.data?.success) {
-        setConnectedApps(res.data.data || []);
-      }
-    } catch (err) {
-      console.error('Connected apps fetch error:', err);
-    }
-  };
-
-  const handleConnectApp = async (appName, appSlug) => {
-    try {
-      setConnecting(true);
-      await authApi.connectApp({ app_name: appName, app_slug: appSlug });
-      showSuccess(`${appName} connected successfully!`);
-      await fetchConnectedApps();
-    } catch (err) {
-      showError(err.response?.data?.message || 'Failed to connect app');
-    } finally {
-      setConnecting(false);
     }
   };
 
@@ -126,89 +101,6 @@ export default function Profile() {
     }
   };
 
-  const handleEnable2FA = async () => {
-    try {
-      const res = await authApi.enable2FA();
-      if (res.data?.success) {
-        setTwofaEnabled(true);
-        const codes = res.data.backup_codes?.join(', ') || '';
-        showSuccess(`2FA Enabled! Backup codes: ${codes}`);
-      }
-    } catch (err) {
-      showError(err.response?.data?.message || 'Failed to enable 2FA');
-    }
-  };
-
-  const handleDisable2FA = async () => {
-    if (!confirm('Disable 2FA? This will reduce account security.')) return;
-    try {
-      await authApi.disable2FA();
-      setTwofaEnabled(false);
-      showSuccess('2FA disabled');
-    } catch (err) {
-      showError(err.response?.data?.message || 'Failed to disable 2FA');
-    }
-  };
-
-  const handleExportData = async () => {
-    try {
-      const res = await authApi.exportData();
-      if (res.data?.success) {
-        const blob = new Blob([JSON.stringify(res.data.data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `vexastore-data-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showSuccess('Data exported successfully');
-      }
-    } catch (err) {
-      showError('Failed to export data');
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    const confirmText = prompt('Type "DELETE" to confirm account deletion:');
-    if (confirmText === 'DELETE') {
-      try {
-        await authApi.deleteAccount({ confirm: confirmText });
-        showSuccess('Account deleted successfully');
-        localStorage.removeItem('vexastore_user_token');
-        localStorage.removeItem('vexastore_user');
-        navigate('/');
-      } catch (err) {
-        showError(err.response?.data?.message || 'Failed to delete account');
-      }
-    } else if (confirmText !== null) {
-      showError('Confirmation failed. Type "DELETE" exactly.');
-    }
-  };
-
-  const handleViewActivity = async () => {
-    try {
-      const res = await authApi.getActivityLog();
-      const logs = res.data?.data || [];
-      if (logs.length === 0) {
-        showInfo('No recent activity found');
-      } else {
-        showInfo(`Last ${logs.length} activities logged`);
-      }
-    } catch (err) {
-      showError('Failed to load activity log');
-    }
-  };
-
-  const handleViewSessions = async () => {
-    try {
-      const res = await authApi.getSessions();
-      const sessions = res.data?.data || [];
-      showInfo(`Found ${sessions.length} active session(s)`);
-    } catch (err) {
-      showError('Failed to load sessions');
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('vexastore_user_token');
     localStorage.removeItem('vexastore_user');
@@ -237,18 +129,13 @@ export default function Profile() {
     );
   }
 
-  // Check if an app is connected
-  const isAppConnected = (slug) => {
-    return connectedApps.some(app => app.app_slug === slug && app.status === 'connected');
-  };
-
   return (
     <div className="space-y-6">
       <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition">
         <ArrowLeft size={20} /> Back
       </Link>
 
-      {/* Profile Header */}
+      {/* Profile Header with Avatar */}
       <div className="glass-card p-6 flex flex-col md:flex-row items-center gap-6">
         <div className="relative group">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 overflow-hidden">
@@ -393,12 +280,13 @@ export default function Profile() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 2: Security */}
+      {/* TAB 2: Security (Linked to Settings Pages) */}
       {/* ============================================================ */}
       {activeTab === 'security' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Security</h2>
           
+          {/* Password */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Password</p>
@@ -409,6 +297,7 @@ export default function Profile() {
             </Link>
           </div>
 
+          {/* Two‑Factor Authentication - Link to settings page */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Two‑Factor Authentication</p>
@@ -416,13 +305,12 @@ export default function Profile() {
                 {twofaEnabled ? '✅ Enabled' : 'Add extra security'}
               </p>
             </div>
-            {twofaEnabled ? (
-              <button onClick={handleDisable2FA} className="text-red-400 hover:underline text-sm">Disable</button>
-            ) : (
-              <button onClick={handleEnable2FA} className="text-cyan-400 hover:underline text-sm">Set up</button>
-            )}
+            <Link to="/settings/2fa" className="text-cyan-400 hover:underline text-sm">
+              {twofaEnabled ? 'Manage' : 'Set up'}
+            </Link>
           </div>
 
+          {/* Email Verification */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Email Verification</p>
@@ -447,57 +335,63 @@ export default function Profile() {
             )}
           </div>
 
+          {/* Connected Devices - Link to settings page */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Connected Devices</p>
               <p className="text-sm text-slate-400">Manage sessions</p>
             </div>
-            <button onClick={handleViewSessions} className="text-cyan-400 hover:underline text-sm">View</button>
+            <Link to="/settings/devices" className="text-cyan-400 hover:underline text-sm">
+              View
+            </Link>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 3: Privacy & Data */}
+      {/* TAB 3: Privacy & Data (Linked to Settings Pages) */}
       {/* ============================================================ */}
       {activeTab === 'privacy' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Privacy & Data</h2>
 
+          {/* Data Export - Link to settings page */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Data Export</p>
               <p className="text-sm text-slate-400">Download your account data as JSON</p>
             </div>
-            <button onClick={handleExportData} className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
+            <Link to="/settings/export" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               <Download size={14} /> Export
-            </button>
+            </Link>
           </div>
 
+          {/* Delete Account - Link to settings page */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Delete Account</p>
               <p className="text-sm text-red-400">Permanently delete your data</p>
             </div>
-            <button onClick={handleDeleteAccount} className="text-red-400 hover:underline text-sm flex items-center gap-1">
+            <Link to="/settings/delete" className="text-red-400 hover:underline text-sm flex items-center gap-1">
               <Trash2 size={14} /> Delete
-            </button>
+            </Link>
           </div>
 
+          {/* Activity Log - Link to settings page */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Activity Log</p>
               <p className="text-sm text-slate-400">Review your recent activity</p>
             </div>
-            <button onClick={handleViewActivity} className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
+            <Link to="/settings/activity" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               <Activity size={14} /> View
-            </button>
+            </Link>
           </div>
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 4: Connected Apps - FULLY FUNCTIONAL */}
+      {/* TAB 4: Connected Apps (Linked to Settings Page) */}
       {/* ============================================================ */}
       {activeTab === 'apps' && (
         <div className="glass-card p-6 space-y-4">
@@ -507,7 +401,6 @@ export default function Profile() {
           </p>
           
           <div className="space-y-3">
-            {/* VexaStore - Always connected */}
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -520,8 +413,6 @@ export default function Profile() {
               </div>
               <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
             </div>
-
-            {/* VexaTrade */}
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -529,25 +420,11 @@ export default function Profile() {
                 </div>
                 <div>
                   <p className="text-white font-medium">VexaTrade</p>
-                  <p className="text-xs text-slate-400">
-                    Crypto Trading Platform • {isAppConnected('vexatrade') ? 'Connected' : 'Connect to use'}
-                  </p>
+                  <p className="text-xs text-slate-400">Crypto Trading Platform</p>
                 </div>
               </div>
-              {isAppConnected('vexatrade') ? (
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
-              ) : (
-                <button
-                  onClick={() => handleConnectApp('VexaTrade', 'vexatrade')}
-                  disabled={connecting}
-                  className="text-cyan-400 hover:underline text-sm disabled:opacity-50"
-                >
-                  {connecting ? 'Connecting...' : 'Connect'}
-                </button>
-              )}
+              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
             </div>
-
-            {/* VexaWallet */}
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -560,8 +437,6 @@ export default function Profile() {
               </div>
               <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
             </div>
-
-            {/* VexaEmail */}
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -574,8 +449,6 @@ export default function Profile() {
               </div>
               <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
             </div>
-
-            {/* VexaBrowser */}
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -590,13 +463,19 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Manage Apps Link */}
+          <div className="mt-4">
+            <Link to="/settings/apps" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
+              <Layers size={14} /> Manage Connected Apps →
+            </Link>
+          </div>
+
           {/* Info Box */}
-          <div className="mt-4 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+          <div className="mt-2 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
             <p className="text-sm text-slate-400">
               💡 <span className="text-white font-medium">One Account, All Vexa Apps</span>
               <br />
               Your VexaAccount works across VexaStore, VexaTrade, VexaWallet, VexaEmail, and VexaBrowser.
-              No need to create separate accounts!
             </p>
           </div>
         </div>
