@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
 import { authApi } from '../../services/api';
-import { ArrowLeft, Monitor, Smartphone, Clock, Globe } from 'lucide-react';
+import { ArrowLeft, Monitor, Smartphone, Clock, Globe, RefreshCw } from 'lucide-react';
 
 export default function ConnectedDevices() {
   const navigate = useNavigate();
@@ -37,11 +37,16 @@ export default function ConnectedDevices() {
         </Link>
 
         <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-              <Monitor size={20} className="text-cyan-400" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                <Monitor size={20} className="text-cyan-400" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Connected Devices</h1>
             </div>
-            <h1 className="text-2xl font-bold text-white">Connected Devices</h1>
+            <button onClick={fetchSessions} className="text-slate-400 hover:text-white transition">
+              <RefreshCw size={18} />
+            </button>
           </div>
 
           {sessions.length === 0 ? (
