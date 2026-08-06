@@ -10,7 +10,6 @@ export const api = axios.create({
   },
 });
 
-// ✅ Token interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('vexastore_user_token');
@@ -61,6 +60,11 @@ export const authApi = {
   getSessions: () => api.get('/api/auth/sessions'),
   exportData: () => api.get('/api/auth/export-data'),
   deleteAccount: (data) => api.post('/api/auth/delete-account', data),
+
+  // Connected Apps
+  getConnectedApps: () => api.get('/api/auth/connected-apps'),
+  connectApp: (data) => api.post('/api/auth/connect-app', data),
+  disconnectApp: (data) => api.post('/api/auth/disconnect-app', data),
 };
 
 export const appApi = {
