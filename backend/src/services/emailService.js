@@ -1,19 +1,15 @@
 const axios = require('axios');
 
 // ============================================================
-// Brevo API Configuration (HTTPS – no timeout)
+// Brevo API Configuration
 // ============================================================
-const BREVO_API_KEY = process.env.SMTP_PASS; // This is your Brevo API key
+const BREVO_API_KEY = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'vexatradeblockchainecosystem@gmail.com';
 const FROM_NAME = process.env.MAIL_FROM_NAME || 'VexaTrade.inc';
 
-// ============================================================
-// Send Email via Brevo REST API
-// ============================================================
 async function sendEmail({ to, subject, html }) {
-  // If no API key, fallback to console log
-  if (!BREVO_API_KEY || BREVO_API_KEY.startsWith('xsmtpsib-') === false) {
+  if (!BREVO_API_KEY) {
     console.warn('⚠️ Brevo API key not configured. Falling back to console log.');
     console.log('📧 [FAKE EMAIL] To:', to);
     console.log('📧 [FAKE EMAIL] Subject:', subject);
@@ -25,10 +21,7 @@ async function sendEmail({ to, subject, html }) {
     const response = await axios.post(
       BREVO_API_URL,
       {
-        sender: {
-          name: FROM_NAME,
-          email: FROM_EMAIL,
-        },
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
         to: [{ email: to }],
         subject: subject,
         htmlContent: html,
@@ -38,24 +31,19 @@ async function sendEmail({ to, subject, html }) {
           'Content-Type': 'application/json',
           'api-key': BREVO_API_KEY,
         },
-        timeout: 30000, // 30 seconds
+        timeout: 30000,
       }
     );
-
-    console.log('✅ Email sent via Brevo API to:', to, 'Message ID:', response.data.messageId);
+    console.log('✅ Email sent via Brevo API to:', to);
     return true;
   } catch (error) {
     console.error('❌ Brevo API error:', error.response?.data || error.message);
-    // Fallback: log to console
     console.log('📧 [FALLBACK] To:', to);
     console.log('📧 [FALLBACK] Subject:', subject);
     return false;
   }
 }
 
-// ============================================================
-// Send OTP Email
-// ============================================================
 async function sendOtpEmail(to, otp) {
   const html = `
     <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
@@ -70,9 +58,6 @@ async function sendOtpEmail(to, otp) {
   return sendEmail({ to, subject: 'VexaStore Email Verification', html });
 }
 
-// ============================================================
-// Send Password Reset Email
-// ============================================================
 async function sendResetEmail(to, resetLink) {
   const html = `
     <div style="font-family: Arial, sans-serif; padding: 24px; background: #0b0b0b; color: #ffffff;">
