@@ -10,7 +10,7 @@ export const api = axios.create({
   },
 });
 
-// ✅ Add this interceptor – attaches token to every request
+// ✅ Token interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('vexastore_user_token');
@@ -35,6 +35,7 @@ export const getApiErrorMessage = (err) => {
 };
 
 export const authApi = {
+  // Auth
   login: (data) => api.post('/api/auth/login', data),
   register: (data) => api.post('/api/auth/register', data),
   verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
@@ -42,11 +43,24 @@ export const authApi = {
   googleLogin: (data) => api.post('/api/auth/google', data),
   forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
   resetPassword: (data) => api.post('/api/auth/reset-password', data),
+
+  // Profile
   getProfile: () => api.get('/api/auth/profile'),
   updateProfile: (data) => api.put('/api/auth/profile', data),
   updateProfileFull: (data) => api.put('/api/auth/profile/full', data),
   updateProfilePicture: (avatar_url) => api.put('/api/auth/profile/picture', { avatar_url }),
   changePassword: (data) => api.post('/api/auth/change-password', data),
+  resendVerification: () => api.post('/api/auth/resend-verification'),
+
+  // 2FA
+  enable2FA: (secret) => api.post('/api/auth/twofa/enable', { secret }),
+  disable2FA: () => api.post('/api/auth/twofa/disable'),
+
+  // Data & Privacy
+  getActivityLog: () => api.get('/api/auth/activity-log'),
+  getSessions: () => api.get('/api/auth/sessions'),
+  exportData: () => api.get('/api/auth/export-data'),
+  deleteAccount: (data) => api.post('/api/auth/delete-account', data),
 };
 
 export const appApi = {
