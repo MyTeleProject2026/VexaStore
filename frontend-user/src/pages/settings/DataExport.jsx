@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/DataExport.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Download, FileJson, Shield } from 'lucide-react';
 
 export default function DataExport() {
@@ -9,12 +9,29 @@ export default function DataExport() {
   const { showSuccess, showError } = useNotification();
   const [loading, setLoading] = useState(false);
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   const handleExport = async () => {
+    const token = getToken();
+    if (!token) {
+      showError('Please login first');
+      return;
+    }
     try {
       setLoading(true);
-      const res = await authApi.exportData();
-      if (res.data?.success) {
-        const blob = new Blob([JSON.stringify(res.data.data, null, 2)], { type: 'application/json' });
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/export-data`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -22,6 +39,8 @@ export default function DataExport() {
         a.click();
         URL.revokeObjectURL(url);
         showSuccess('Data exported successfully');
+      } else {
+        showError(data.message || 'Failed to export data');
       }
     } catch (err) {
       showError('Failed to export data');
