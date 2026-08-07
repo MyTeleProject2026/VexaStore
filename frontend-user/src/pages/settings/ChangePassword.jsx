@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/ChangePassword.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { Lock, Eye, EyeOff, ArrowLeft, Save, Key } from 'lucide-react';
 
 export default function ChangePassword() {
@@ -14,6 +14,14 @@ export default function ChangePassword() {
     newPassword: '',
     confirmPassword: '',
   });
+
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,18 +38,35 @@ export default function ChangePassword() {
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      showError('Please login first');
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await authApi.changePassword({
-        currentPassword: form.currentPassword,
-        newPassword: form.newPassword,
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        })
       });
-      if (res.data?.success) {
+      const data = await res.json();
+      if (data.success) {
         showSuccess('Password changed successfully!');
         navigate('/profile');
+      } else {
+        showError(data.message || 'Failed to change password');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to change password');
+      showError(err.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
