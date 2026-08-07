@@ -1,8 +1,9 @@
+// backend/src/middleware/auth.js
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
-// Admin Authentication
+// Admin Authentication (unchanged)
 const authAdmin = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -21,7 +22,7 @@ const authAdmin = (req, res, next) => {
   }
 };
 
-// User Authentication
+// ✅ User Authentication – validates token from VexaAccount
 const authUser = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -30,9 +31,12 @@ const authUser = (req, res, next) => {
     }
     const token = authHeader.slice(7).trim();
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role !== 'user') {
-      return res.status(403).json({ success: false, message: 'User access required' });
+    
+    // ✅ Allow both 'user' and 'admin' roles for flexibility
+    if (decoded.role !== 'user' && decoded.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Invalid token role' });
     }
+    
     req.user = decoded;
     next();
   } catch (error) {
