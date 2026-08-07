@@ -1,19 +1,42 @@
-import { useState } from 'react';
+// frontend-user/src/pages/Login.jsx
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi } from '../services/api';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, LogIn } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 
+// ✅ VexaAccount SVG Icon
+const VexaAccountIcon = ({ className = "w-5 h-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={className}>
+    <defs>
+      <linearGradient id="vGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#06b6d4"/>
+        <stop offset="100%" stopColor="#10b981"/>
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" rx="20" ry="20" fill="#0a0e1a" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5"/>
+    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(6,182,212,0.15)" strokeWidth="1"/>
+    <g transform="translate(50, 50) scale(0.8)">
+      <path d="M-25,-25 L-5,15 L5,15 L25,-25" fill="none" stroke="url(#vGrad)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M25,-25 L5,15" fill="none" stroke="url(#vGrad)" strokeWidth="6" strokeLinecap="round"/>
+      <path d="M-12,22 L0,30 L12,22" fill="none" stroke="url(#vGrad)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="0" cy="-28" r="4" fill="#06b6d4"/>
+      <circle cx="0" cy="-28" r="8" fill="none" stroke="rgba(6,182,212,0.3)" strokeWidth="1.5"/>
+    </g>
+    <circle cx="30" cy="30" r="20" fill="rgba(255,255,255,0.03)"/>
+  </svg>
+);
+
 export default function Login() {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { showSuccess, showError } = useNotification();
 
-  // Google OAuth
+  // ✅ Google OAuth (still works through VexaAccount)
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -21,17 +44,18 @@ export default function Login() {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
         }).then(res => res.json());
 
-        const res = await authApi.googleLogin({
+        // ✅ Redirect to VexaAccount with Google data
+        const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+        const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+        
+        // Store Google data temporarily
+        sessionStorage.setItem('google_user_info', JSON.stringify({
           google_id: userInfo.sub,
           email: userInfo.email,
           name: userInfo.name || userInfo.email.split('@')[0]
-        });
-        if (res.data?.success) {
-          localStorage.setItem('vexastore_user_token', res.data.token);
-          localStorage.setItem('vexastore_user', JSON.stringify(res.data.user));
-          showSuccess('Login successful');
-          navigate('/');
-        }
+        }));
+        
+        window.location.href = `${vexaAccountUrl}/api/auth/google?redirect_uri=${redirectUri}`;
       } catch (err) {
         const msg = err.response?.data?.message || err.message || 'Google login failed';
         showError(`❌ ${msg}`);
@@ -40,27 +64,24 @@ export default function Login() {
     onError: () => showError('❌ Google login failed'),
   });
 
+  // ✅ Manual Login – Redirect to VexaAccount
+  const handleVexaAccountLogin = () => {
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+    const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+    window.location.href = `${vexaAccountUrl}/api/auth/login?redirect_uri=${redirectUri}`;
+  };
+
+  // ✅ Handle login with email/password via VexaAccount (redirect)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       showError('Please fill all fields');
       return;
     }
-    try {
-      setLoading(true);
-      const res = await authApi.login({ email, password });
-      if (res.data?.success) {
-        localStorage.setItem('vexastore_user_token', res.data.token);
-        localStorage.setItem('vexastore_user', JSON.stringify(res.data.user));
-        showSuccess('Login successful');
-        navigate('/');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Login failed';
-      showError(`❌ ${msg}`);
-    } finally {
-      setLoading(false);
-    }
+    // Redirect to VexaAccount with prefilled email
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+    const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+    window.location.href = `${vexaAccountUrl}/api/auth/login?email=${encodeURIComponent(email)}&redirect_uri=${redirectUri}`;
   };
 
   return (
@@ -71,6 +92,24 @@ export default function Login() {
         </button>
         <h1 className="text-2xl font-bold gradient-text text-center mb-2">Welcome Back</h1>
         <p className="text-slate-400 text-center text-sm mb-6">Sign in to access your downloads and favorites</p>
+
+        {/* ✅ VexaAccount SSO Button */}
+        <button
+          onClick={handleVexaAccountLogin}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-300 transition hover:bg-cyan-500/20 mb-4"
+        >
+          <VexaAccountIcon className="w-5 h-5" />
+          Continue with VexaAccount
+        </button>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10"></div>
+          </div>
+          <div className="relative flex justify-center text-xs text-slate-500">
+            <span className="bg-dark-bg px-2">OR</span>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -131,6 +170,7 @@ export default function Login() {
           Don't have an account? <Link to="/register" className="text-cyan-400 hover:underline">Register</Link>
         </p>
 
+        {/* ✅ Google OAuth (still available) */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10"></div>
