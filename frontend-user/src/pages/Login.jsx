@@ -1,5 +1,5 @@
 // frontend-user/src/pages/Login.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, LogIn } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Google OAuth (still works through VexaAccount)
+  // ✅ Google OAuth (through VexaAccount)
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -44,11 +44,9 @@ export default function Login() {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
         }).then(res => res.json());
 
-        // ✅ Redirect to VexaAccount with Google data
         const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
         const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
         
-        // Store Google data temporarily
         sessionStorage.setItem('google_user_info', JSON.stringify({
           google_id: userInfo.sub,
           email: userInfo.email,
@@ -64,24 +62,64 @@ export default function Login() {
     onError: () => showError('❌ Google login failed'),
   });
 
-  // ✅ Manual Login – Redirect to VexaAccount
-  const handleVexaAccountLogin = () => {
-    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-    const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-    window.location.href = `${vexaAccountUrl}/api/auth/login?redirect_uri=${redirectUri}`;
-  };
-
-  // ✅ Handle login with email/password via VexaAccount (redirect)
+  // ✅ Manual Login with VexaAccount API (via axios)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       showError('Please fill all fields');
       return;
     }
-    // Redirect to VexaAccount with prefilled email
+
+    try {
+      setLoading(true);
+      
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      
+      const response = await fetch(`${vexaAccountUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.token) {
+        // ✅ Store token
+        localStorage.setItem('vexastore_user_token', data.token);
+        localStorage.setItem('userToken', data.token);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('accessToken', data.token);
+        
+        if (data.user) {
+          localStorage.setItem('vexastore_user', JSON.stringify(data.user));
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('userData', JSON.stringify(data.user));
+        }
+        
+        showSuccess('Login successful');
+        navigate('/');
+      } else if (data.requiresAuthenticator2fa) {
+        // Redirect to 2FA page (VexaAccount will handle it)
+        showError('2FA required. Please use "Continue with VexaAccount"');
+        // Or redirect to VexaAccount login with 2FA flag
+        const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+        window.location.href = `${vexaAccountUrl}/api/auth/login?redirect_uri=${redirectUri}&2fa=${data.userId}`;
+      } else {
+        showError(data.message || 'Login failed');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Login failed';
+      showError(`❌ ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Continue with VexaAccount (SSO)
+  const handleVexaAccountLogin = () => {
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-    window.location.href = `${vexaAccountUrl}/api/auth/login?email=${encodeURIComponent(email)}&redirect_uri=${redirectUri}`;
+    window.location.href = `${vexaAccountUrl}/api/auth/login?redirect_uri=${redirectUri}`;
   };
 
   return (
@@ -111,6 +149,7 @@ export default function Login() {
           </div>
         </div>
 
+        {/* ✅ Manual Login Form (uses VexaAccount API) */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="input-label">Email</label>
@@ -170,7 +209,7 @@ export default function Login() {
           Don't have an account? <Link to="/register" className="text-cyan-400 hover:underline">Register</Link>
         </p>
 
-        {/* ✅ Google OAuth (still available) */}
+        {/* ✅ Google OAuth */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-white/10"></div>
