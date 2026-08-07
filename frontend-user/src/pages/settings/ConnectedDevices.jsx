@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/ConnectedDevices.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Monitor, Smartphone, Clock, Globe, RefreshCw } from 'lucide-react';
 
 export default function ConnectedDevices() {
@@ -10,14 +10,31 @@ export default function ConnectedDevices() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   useEffect(() => {
     fetchSessions();
   }, []);
 
   const fetchSessions = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await authApi.getSessions();
-      setSessions(res.data?.data || []);
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/sessions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setSessions(data.data || []);
     } catch (err) {
       console.error('Failed to load sessions');
     } finally {
