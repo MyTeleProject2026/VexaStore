@@ -1,3 +1,4 @@
+// frontend-user/src/App.jsx
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -10,7 +11,7 @@ import AppPage from './pages/AppPage';
 import SearchPage from './pages/SearchPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import VerifyOtp from './pages/VerifyOtp';
+import AuthCallback from './pages/AuthCallback'; // ✅ New
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import Downloads from './pages/Downloads';
@@ -19,7 +20,7 @@ import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
-// ✅ New Settings Pages
+// Settings Pages
 import TwoFactorAuth from './pages/settings/TwoFactorAuth';
 import ChangePassword from './pages/settings/ChangePassword';
 import ConnectedDevices from './pages/settings/ConnectedDevices';
@@ -79,7 +80,9 @@ function AppContent() {
           <Route path="search" element={<SearchPage />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
-          <Route path="verify-otp" element={<VerifyOtp />} />
+          
+          {/* ✅ Auth Callback Route */}
+          <Route path="auth/callback" element={<AuthCallback />} />
           
           {/* Profile & Settings */}
           <Route path="profile" element={<Profile />} />
