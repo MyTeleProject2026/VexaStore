@@ -1,3 +1,4 @@
+// frontend-user/src/services/api.js
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -12,7 +13,13 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('vexastore_user_token');
+    // ✅ Check all possible token keys
+    const token = 
+      localStorage.getItem('vexastore_user_token') ||
+      localStorage.getItem('userToken') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('accessToken');
+      
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -33,40 +40,8 @@ export const getApiErrorMessage = (err) => {
   return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
 };
 
-export const authApi = {
-  // Auth
-  login: (data) => api.post('/api/auth/login', data),
-  register: (data) => api.post('/api/auth/register', data),
-  verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
-  resendOtp: (data) => api.post('/api/auth/resend-otp', data),
-  googleLogin: (data) => api.post('/api/auth/google', data),
-  forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
-  resetPassword: (data) => api.post('/api/auth/reset-password', data),
-
-  // Profile
-  getProfile: () => api.get('/api/auth/profile'),
-  updateProfile: (data) => api.put('/api/auth/profile', data),
-  updateProfileFull: (data) => api.put('/api/auth/profile/full', data),
-  updateProfilePicture: (avatar_url) => api.put('/api/auth/profile/picture', { avatar_url }),
-  changePassword: (data) => api.post('/api/auth/change-password', data),
-  resendVerification: () => api.post('/api/auth/resend-verification'),
-
-  // 2FA
-  generate2FA: () => api.post('/api/auth/twofa/generate'),
-  verifyEnable2FA: (data) => api.post('/api/auth/twofa/verify-enable', data),
-  disable2FA: () => api.post('/api/auth/twofa/disable'),
-
-  // Data & Privacy
-  getActivityLog: () => api.get('/api/auth/activity-log'),
-  getSessions: () => api.get('/api/auth/sessions'),
-  exportData: () => api.get('/api/auth/export-data'),
-  deleteAccount: (data) => api.post('/api/auth/delete-account', data),
-
-  // Connected Apps
-  getConnectedApps: () => api.get('/api/auth/connected-apps'),
-  connectApp: (data) => api.post('/api/auth/connect-app', data),
-  disconnectApp: (data) => api.post('/api/auth/disconnect-app', data),
-};
+// ✅ REMOVED authApi – authentication now handled by VexaAccount SSO
+// All auth methods (login, register, OTP, etc.) are removed
 
 export const appApi = {
   getApps: (params = {}) => api.get('/api/apps', { params }),
