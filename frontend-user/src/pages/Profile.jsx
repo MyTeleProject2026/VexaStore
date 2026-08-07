@@ -1,7 +1,8 @@
+// frontend-user/src/pages/Profile.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi, api } from '../services/api';
+import { api, getApiErrorMessage } from '../services/api';
 import { 
   User, Mail, Phone, Camera, LogOut, 
   Shield, Lock, Globe, Smartphone, 
@@ -23,77 +24,195 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(false);
 
+  // ✅ Helper: Get user from localStorage
+  const getUserFromStorage = () => {
+    try {
+      const data = 
+        localStorage.getItem('vexastore_user') ||
+        localStorage.getItem('user') ||
+        localStorage.getItem('userData');
+      if (data) return JSON.parse(data);
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  // ✅ Helper: Get token from localStorage
+  const getToken = () => {
+    return (
+      localStorage.getItem('vexastore_user_token') ||
+      localStorage.getItem('userToken') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('accessToken') ||
+      ''
+    );
+  };
+
   useEffect(() => {
     fetchProfile();
   }, []);
 
+  // ✅ Updated: Uses VexaAccount API via axios (same as VexaTrade)
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await authApi.getProfile();
-      if (res.data?.success) {
-        setUser(res.data.user);
-        setTwofaEnabled(res.data.user.twofa_enabled === 1);
+      
+      const token = getToken();
+      if (!token) {
+        // Try to get user from localStorage
+        const storedUser = getUserFromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          setTwofaEnabled(storedUser.twofa_enabled === 1);
+          setForm({
+            name: storedUser.name || '',
+            phone: storedUser.phone || '',
+            bio: storedUser.bio || '',
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Use VexaAccount's profile endpoint
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        const userData = data.user;
+        setUser(userData);
+        setTwofaEnabled(userData.twofa_enabled === 1);
         setForm({
-          name: res.data.user.name || '',
-          phone: res.data.user.phone || '',
-          bio: res.data.user.bio || '',
+          name: userData.name || '',
+          phone: userData.phone || '',
+          bio: userData.bio || '',
         });
       } else {
-        showError(res.data?.message || 'Failed to load profile');
+        // Fallback to localStorage
+        const storedUser = getUserFromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          setTwofaEnabled(storedUser.twofa_enabled === 1);
+          setForm({
+            name: storedUser.name || '',
+            phone: storedUser.phone || '',
+            bio: storedUser.bio || '',
+          });
+        }
       }
     } catch (err) {
-      console.error('Profile fetch error:', err.response?.data || err.message);
-      showError(err.response?.data?.message || 'Failed to load profile');
+      console.error('Profile fetch error:', err);
+      // Fallback to localStorage
+      const storedUser = getUserFromStorage();
+      if (storedUser) {
+        setUser(storedUser);
+        setTwofaEnabled(storedUser.twofa_enabled === 1);
+        setForm({
+          name: storedUser.name || '',
+          phone: storedUser.phone || '',
+          bio: storedUser.bio || '',
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Updated: Uses VexaAccount API
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      const res = await authApi.updateProfileFull({
-        name: form.name,
-        phone: form.phone,
-        bio: form.bio,
+      
+      const token = getToken();
+      if (!token) {
+        showError('Please login first');
+        return;
+      }
+
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/profile/full`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          bio: form.bio,
+        })
       });
-      if (res.data?.success) {
-        setUser(res.data.user);
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUser(data.user);
         setEditMode(false);
-        const stored = localStorage.getItem('vexastore_user');
+        
+        // Update localStorage
+        const stored = getUserFromStorage();
         if (stored) {
-          const parsed = JSON.parse(stored);
-          parsed.name = res.data.user.name;
-          localStorage.setItem('vexastore_user', JSON.stringify(parsed));
+          const updated = { ...stored, ...data.user };
+          localStorage.setItem('vexastore_user', JSON.stringify(updated));
+          localStorage.setItem('user', JSON.stringify(updated));
+          localStorage.setItem('userData', JSON.stringify(updated));
         }
+        
         showSuccess('Profile updated');
+      } else {
+        showError(data.message || 'Update failed');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Update failed');
+      showError(err.message || 'Update failed');
     } finally {
       setSaving(false);
     }
   };
 
+  // ✅ Updated: Uses VexaAccount API
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    const formData = new FormData();
-    formData.append('avatar', file);
-    
     try {
       setUploading(true);
-      const res = await api.post('/api/upload/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (res.data?.success) {
-        const avatar_url = res.data.avatar_url;
-        await authApi.updateProfilePicture(avatar_url);
-        showSuccess('Avatar updated');
-        fetchProfile();
+      
+      const token = getToken();
+      if (!token) {
+        showError('Please login first');
+        return;
       }
+
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result;
+        
+        const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+        const response = await fetch(`${vexaAccountUrl}/api/auth/profile/picture`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ avatar_url: base64String })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showSuccess('Avatar updated');
+          fetchProfile();
+        } else {
+          showError(data.message || 'Avatar update failed');
+        }
+      };
+      reader.readAsDataURL(file);
+      
     } catch (err) {
       showError('Avatar upload failed');
     } finally {
@@ -101,9 +220,40 @@ export default function Profile() {
     }
   };
 
+  // ✅ Updated: Resend verification via VexaAccount
+  const handleResendVerification = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        showError('Please login first');
+        return;
+      }
+
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        showSuccess('Verification email resent');
+      } else {
+        showError(data.message || 'Failed to resend');
+      }
+    } catch (err) {
+      showError('Failed to resend verification');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('vexastore_user_token');
     localStorage.removeItem('vexastore_user');
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userData');
     showSuccess('Logged out');
     navigate('/');
   };
@@ -297,7 +447,7 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* Two‑Factor Authentication - Link to settings page */}
+          {/* Two‑Factor Authentication */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Two‑Factor Authentication</p>
@@ -320,14 +470,7 @@ export default function Profile() {
             </div>
             {!user.is_verified && (
               <button
-                onClick={async () => {
-                  try {
-                    await authApi.resendVerification();
-                    showSuccess('Verification email resent');
-                  } catch (err) {
-                    showError(err.response?.data?.message || 'Failed to resend');
-                  }
-                }}
+                onClick={handleResendVerification}
                 className="text-cyan-400 hover:underline text-sm"
               >
                 Resend Verification
@@ -335,7 +478,7 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Connected Devices - Link to settings page */}
+          {/* Connected Devices */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Connected Devices</p>
@@ -355,7 +498,7 @@ export default function Profile() {
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Privacy & Data</h2>
 
-          {/* Data Export - Link to settings page */}
+          {/* Data Export */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Data Export</p>
@@ -366,7 +509,7 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* Delete Account - Link to settings page */}
+          {/* Delete Account */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Delete Account</p>
@@ -377,7 +520,7 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* Activity Log - Link to settings page */}
+          {/* Activity Log */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Activity Log</p>
