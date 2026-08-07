@@ -1,31 +1,66 @@
+// frontend-user/src/pages/EditProfile.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi } from '../services/api';
 import { User, Mail, ArrowLeft, Save } from 'lucide-react';
 
 export default function EditProfile() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-  });
-  const [originalEmail, setOriginalEmail] = useState('');
+  const [form, setForm] = useState({ name: '', email: '', phone: '', bio: '' });
+
+  // ✅ Helper: Get token
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
 
   useEffect(() => {
-    const userData = localStorage.getItem('vexastore_user');
+    const userData = 
+      localStorage.getItem('vexastore_user') ||
+      localStorage.getItem('user') ||
+      localStorage.getItem('userData');
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        setForm({ name: user.name || '', email: user.email || '' });
-        setOriginalEmail(user.email || '');
-      } catch (e) {
-        console.error('Failed to parse user data');
-      }
+        setForm({
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          bio: user.bio || '',
+        });
+      } catch (e) {}
     }
+    // Optionally fetch fresh profile from VexaAccount
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = data.user;
+        setForm({
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          bio: user.bio || '',
+        });
+      }
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,23 +68,44 @@ export default function EditProfile() {
       showError('Name is required');
       return;
     }
+    const token = getToken();
+    if (!token) {
+      showError('Please login first');
+      return;
+    }
     try {
       setLoading(true);
-      // ✅ Call real API
-      const res = await authApi.updateProfile({ name: form.name.trim() });
-      if (res.data?.success) {
-        // Update localStorage
-        const userData = localStorage.getItem('vexastore_user');
-        if (userData) {
-          const user = JSON.parse(userData);
-          user.name = res.data.user.name;
-          localStorage.setItem('vexastore_user', JSON.stringify(user));
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/profile/full`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          bio: form.bio,
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update localStorage with new data
+        const stored = localStorage.getItem('vexastore_user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          const updated = { ...user, ...data.user };
+          localStorage.setItem('vexastore_user', JSON.stringify(updated));
+          localStorage.setItem('user', JSON.stringify(updated));
+          localStorage.setItem('userData', JSON.stringify(updated));
         }
         showSuccess('Profile updated successfully!');
         navigate('/profile');
+      } else {
+        showError(data.message || 'Update failed');
       }
     } catch (err) {
-      showError(err.response?.data?.message || err.message || 'Failed to update profile');
+      showError(err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -86,13 +142,31 @@ export default function EditProfile() {
             <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
             <input
               type="email"
-              className="input-field pl-10"
+              className="input-field pl-10 opacity-60 cursor-not-allowed"
               value={form.email}
               disabled
-              className="input-field pl-10 opacity-60 cursor-not-allowed"
             />
           </div>
           <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+        </div>
+        <div>
+          <label className="input-label">Phone</label>
+          <input
+            type="tel"
+            className="input-field"
+            value={form.phone}
+            onChange={e => setForm({ ...form, phone: e.target.value })}
+            placeholder="+1 234 567 890"
+          />
+        </div>
+        <div>
+          <label className="input-label">Bio</label>
+          <textarea
+            className="input-field min-h-[100px] resize-y"
+            value={form.bio}
+            onChange={e => setForm({ ...form, bio: e.target.value })}
+            placeholder="Tell us about yourself"
+          />
         </div>
 
         <button
