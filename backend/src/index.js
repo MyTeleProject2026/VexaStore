@@ -80,7 +80,6 @@ app.use('/api/downloads', downloadRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/upload', uploadRoutes);
 // ============================================================
