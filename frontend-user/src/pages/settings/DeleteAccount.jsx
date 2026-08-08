@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/DeleteAccount.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function DeleteAccount() {
@@ -10,20 +10,52 @@ export default function DeleteAccount() {
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   const handleDelete = async () => {
     if (confirmText !== 'DELETE') {
       showError('Type "DELETE" exactly to confirm');
       return;
     }
+    const token = getToken();
+    if (!token) {
+      showError('Please login first');
+      return;
+    }
     try {
       setLoading(true);
-      await authApi.deleteAccount({ confirm: confirmText });
-      showSuccess('Account deleted successfully');
-      localStorage.removeItem('vexastore_user_token');
-      localStorage.removeItem('vexastore_user');
-      navigate('/');
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/delete-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ confirm: confirmText })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showSuccess('Account deleted successfully');
+        // Clear all localStorage
+        localStorage.removeItem('vexastore_user_token');
+        localStorage.removeItem('vexastore_user');
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userData');
+        navigate('/');
+      } else {
+        showError(data.message || 'Failed to delete account');
+      }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to delete account');
+      showError(err.message || 'Failed to delete account');
     } finally {
       setLoading(false);
     }
