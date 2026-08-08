@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/ActivityLog.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Activity, Clock, Globe, RefreshCw } from 'lucide-react';
 
 export default function ActivityLog() {
@@ -10,14 +10,31 @@ export default function ActivityLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   useEffect(() => {
     fetchLogs();
   }, []);
 
   const fetchLogs = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await authApi.getActivityLog();
-      setLogs(res.data?.data || []);
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/activity-log`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setLogs(data.data || []);
     } catch (err) {
       console.error('Failed to load activity log');
     } finally {
