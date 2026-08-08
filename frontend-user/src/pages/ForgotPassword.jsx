@@ -1,7 +1,7 @@
+// frontend-user/src/pages/ForgotPassword.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi } from '../services/api';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 
 export default function ForgotPassword() {
@@ -19,13 +19,21 @@ export default function ForgotPassword() {
     }
     try {
       setLoading(true);
-      const res = await authApi.forgotPassword({ email });
-      if (res.data?.success) {
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
         setSubmitted(true);
         showSuccess('If your email is registered, you will receive a reset link.');
+      } else {
+        showError(data.message || 'Something went wrong');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Something went wrong');
+      showError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
