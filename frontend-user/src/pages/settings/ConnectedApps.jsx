@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/ConnectedApps.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Smartphone, Wallet, Globe, Mail, TrendingUp, Layers, Check, X } from 'lucide-react';
 
 export default function ConnectedApps() {
@@ -10,14 +10,31 @@ export default function ConnectedApps() {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   useEffect(() => {
     fetchApps();
   }, []);
 
   const fetchApps = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await authApi.getConnectedApps();
-      setApps(res.data?.data || []);
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/connected-apps`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setApps(data.data || []);
     } catch (err) {
       console.error('Failed to load connected apps');
     } finally {
