@@ -1,7 +1,7 @@
+// frontend-user/src/pages/ResetPassword.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { authApi } from '../services/api';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -16,7 +16,6 @@ export default function ResetPassword() {
   const { showSuccess, showError } = useNotification();
 
   useEffect(() => {
-    // Optionally verify token validity (we'll just rely on backend)
     if (!token) {
       setValidToken(false);
     } else {
@@ -40,13 +39,21 @@ export default function ResetPassword() {
     }
     try {
       setLoading(true);
-      const res = await authApi.resetPassword({ token, newPassword });
-      if (res.data?.success) {
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      });
+      const data = await response.json();
+      if (data.success) {
         showSuccess('Password reset successfully! Please login.');
         navigate('/login');
+      } else {
+        showError(data.message || 'Failed to reset password');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to reset password');
+      showError(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }
