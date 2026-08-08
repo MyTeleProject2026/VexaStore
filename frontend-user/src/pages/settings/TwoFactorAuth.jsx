@@ -1,7 +1,7 @@
+// frontend-user/src/pages/settings/TwoFactorAuth.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../../hooks/useNotification';
-import { authApi } from '../../services/api';
 import { ArrowLeft, Shield, QrCode, CheckCircle, Copy, Key, Lock } from 'lucide-react';
 
 export default function TwoFactorAuth() {
@@ -15,31 +15,56 @@ export default function TwoFactorAuth() {
   const [backupCodes, setBackupCodes] = useState([]);
   const [enabled, setEnabled] = useState(false);
 
+  const getToken = () => (
+    localStorage.getItem('vexastore_user_token') ||
+    localStorage.getItem('userToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
+
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const res = await authApi.getProfile();
-        if (res.data?.user?.twofa_enabled) {
-          setEnabled(true);
-        }
-      } catch (err) {}
-    };
     checkStatus();
   }, []);
 
+  const checkStatus = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.user?.twofa_enabled) {
+        setEnabled(true);
+      }
+    } catch (err) {}
+  };
+
   const handleGenerate = async () => {
+    const token = getToken();
+    if (!token) {
+      showError('Please login first');
+      return;
+    }
     try {
       setLoading(true);
-      const res = await authApi.generate2FA();
-      if (res.data?.success) {
-        setSecret(res.data.secret);
-        setQrCode(res.data.qrCode);
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/twofa/generate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSecret(data.secret);
+        setQrCode(data.qrCode);
         setStep(2);
+      } else {
+        showError(data.message || 'Failed to generate 2FA setup');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to generate 2FA setup';
-      showError(msg);
-      console.error('2FA generate error:', err);
+      showError('Failed to generate 2FA setup');
     } finally {
       setLoading(false);
     }
@@ -50,16 +75,33 @@ export default function TwoFactorAuth() {
       showError('Please enter a valid 6-digit code');
       return;
     }
+    const authToken = getToken();
+    if (!authToken) {
+      showError('Please login first');
+      return;
+    }
     try {
       setLoading(true);
-      const res = await authApi.verifyEnable2FA({ secret, token });
-      if (res.data?.success) {
-        setBackupCodes(res.data.backupCodes || []);
+      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const res = await fetch(`${vexaAccountUrl}/api/auth/twofa/verify-enable`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ secret, token })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBackupCodes(data.backupCodes || []);
         setStep(3);
         showSuccess('2FA enabled successfully!');
+        setEnabled(true);
+      } else {
+        showError(data.message || 'Invalid verification code');
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Invalid verification code');
+      showError('Verification failed');
     } finally {
       setLoading(false);
     }
