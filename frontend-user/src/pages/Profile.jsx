@@ -2,15 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
-import { api, getApiErrorMessage } from '../services/api';
-import { 
-  User, Mail, Phone, Camera, LogOut, 
-  Shield, Lock, Globe, Smartphone, 
-  ChevronRight, CheckCircle, Edit2, 
-  ArrowLeft, Database, 
+import {
+  User, Mail, Phone, Camera, LogOut,
+  Shield, Lock, Globe, Smartphone,
+  ChevronRight, CheckCircle, Edit2,
+  ArrowLeft, Database,
   Clock, Layers, Key, Eye, EyeOff, Save,
-  Download, Trash2, Activity, TrendingUp, Wallet
+  Download, Trash2, Activity, TrendingUp, Wallet,
+  Settings, Heart, Award, Zap
 } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -23,11 +24,12 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(false);
+  const [stats, setStats] = useState({ downloads: 0, favorites: 0, apps: 0 });
 
-  // ✅ Helper: Get user from localStorage
+  // ─── Helper: Get user from localStorage ───
   const getUserFromStorage = () => {
     try {
-      const data = 
+      const data =
         localStorage.getItem('vexastore_user') ||
         localStorage.getItem('user') ||
         localStorage.getItem('userData');
@@ -38,7 +40,7 @@ export default function Profile() {
     }
   };
 
-  // ✅ Helper: Get token from localStorage
+  // ─── Helper: Get token ───
   const getToken = () => {
     return (
       localStorage.getItem('vexastore_user_token') ||
@@ -53,14 +55,12 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  // ✅ Updated: Uses VexaAccount API via axios (same as VexaTrade)
+  // ─── Fetch Profile from VexaAccount ───
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      
       const token = getToken();
       if (!token) {
-        // Try to get user from localStorage
         const storedUser = getUserFromStorage();
         if (storedUser) {
           setUser(storedUser);
@@ -75,14 +75,13 @@ export default function Profile() {
         return;
       }
 
-      // ✅ Use VexaAccount's profile endpoint
       const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
       const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         const userData = data.user;
         setUser(userData);
@@ -92,8 +91,11 @@ export default function Profile() {
           phone: userData.phone || '',
           bio: userData.bio || '',
         });
+        // Update localStorage
+        localStorage.setItem('vexastore_user', JSON.stringify(userData));
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userData', JSON.stringify(userData));
       } else {
-        // Fallback to localStorage
         const storedUser = getUserFromStorage();
         if (storedUser) {
           setUser(storedUser);
@@ -105,9 +107,26 @@ export default function Profile() {
           });
         }
       }
+
+      // Load stats
+      try {
+        const downloadsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/downloads/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const downloadsData = await downloadsRes.json();
+        if (downloadsData.success) {
+          setStats({
+            downloads: downloadsData.data?.total || 0,
+            favorites: 0,
+            apps: 0
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+
     } catch (err) {
       console.error('Profile fetch error:', err);
-      // Fallback to localStorage
       const storedUser = getUserFromStorage();
       if (storedUser) {
         setUser(storedUser);
@@ -123,11 +142,10 @@ export default function Profile() {
     }
   };
 
-  // ✅ Updated: Uses VexaAccount API
+  // ─── Save Profile ───
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      
       const token = getToken();
       if (!token) {
         showError('Please login first');
@@ -147,14 +165,12 @@ export default function Profile() {
           bio: form.bio,
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setUser(data.user);
         setEditMode(false);
-        
-        // Update localStorage
         const stored = getUserFromStorage();
         if (stored) {
           const updated = { ...stored, ...data.user };
@@ -162,7 +178,6 @@ export default function Profile() {
           localStorage.setItem('user', JSON.stringify(updated));
           localStorage.setItem('userData', JSON.stringify(updated));
         }
-        
         showSuccess('Profile updated');
       } else {
         showError(data.message || 'Update failed');
@@ -174,25 +189,23 @@ export default function Profile() {
     }
   };
 
-  // ✅ Updated: Uses VexaAccount API
+  // ─── Avatar Upload ───
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     try {
       setUploading(true);
-      
       const token = getToken();
       if (!token) {
         showError('Please login first');
         return;
       }
 
-      // Convert file to base64
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = reader.result;
-        
+
         const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
         const response = await fetch(`${vexaAccountUrl}/api/auth/profile/picture`, {
           method: 'PUT',
@@ -202,7 +215,7 @@ export default function Profile() {
           },
           body: JSON.stringify({ avatar_url: base64String })
         });
-        
+
         const data = await response.json();
         if (data.success) {
           showSuccess('Avatar updated');
@@ -212,7 +225,7 @@ export default function Profile() {
         }
       };
       reader.readAsDataURL(file);
-      
+
     } catch (err) {
       showError('Avatar upload failed');
     } finally {
@@ -220,7 +233,7 @@ export default function Profile() {
     }
   };
 
-  // ✅ Updated: Resend verification via VexaAccount
+  // ─── Resend Verification ───
   const handleResendVerification = async () => {
     try {
       const token = getToken();
@@ -234,7 +247,7 @@ export default function Profile() {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const data = await response.json();
       if (data.success) {
         showSuccess('Verification email resent');
@@ -246,6 +259,7 @@ export default function Profile() {
     }
   };
 
+  // ─── Logout ───
   const handleLogout = () => {
     localStorage.removeItem('vexastore_user_token');
     localStorage.removeItem('vexastore_user');
@@ -266,7 +280,12 @@ export default function Profile() {
   ];
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-32">
+        <div className="spinner" />
+        <p className="mt-4 text-slate-500 text-sm">Loading profile...</p>
+      </div>
+    );
   }
 
   if (!user) {
@@ -285,18 +304,10 @@ export default function Profile() {
         <ArrowLeft size={20} /> Back
       </Link>
 
-      {/* Profile Header with Avatar */}
+      {/* ─── Profile Header ─── */}
       <div className="glass-card p-6 flex flex-col md:flex-row items-center gap-6">
         <div className="relative group">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 overflow-hidden">
-            {user.avatar_url ? (
-              <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-4xl font-bold text-cyan-400">
-                {user.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            )}
-          </div>
+          <UserAvatar user={user} size="xl" />
           <label className="absolute bottom-0 right-0 bg-cyan-500 rounded-full p-1.5 cursor-pointer hover:bg-cyan-400 transition disabled:opacity-50">
             {uploading ? (
               <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block"></span>
@@ -310,14 +321,12 @@ export default function Profile() {
           <h1 className="text-2xl font-bold text-white">{user.name}</h1>
           <p className="text-slate-400">{user.email}</p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
-              {user.is_verified ? 'Verified' : 'Unverified'}
+            <span className={`text-xs px-2 py-0.5 rounded-full ${user.is_verified ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+              {user.is_verified ? '✅ Verified' : '❌ Unverified'}
             </span>
             {user.phone && <span className="text-xs text-slate-500">{user.phone}</span>}
             {twofaEnabled && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">
-                🔐 2FA
-              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">🔐 2FA</span>
             )}
           </div>
         </div>
@@ -329,7 +338,26 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* Tabs */}
+      {/* ─── Stats Row ─── */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="glass-card-sm p-3 text-center">
+          <Download size={18} className="mx-auto text-cyan-400" />
+          <p className="text-lg font-bold text-white mt-1">{stats.downloads}</p>
+          <p className="text-xs text-slate-500">Downloads</p>
+        </div>
+        <div className="glass-card-sm p-3 text-center">
+          <Heart size={18} className="mx-auto text-rose-400" />
+          <p className="text-lg font-bold text-white mt-1">{stats.favorites}</p>
+          <p className="text-xs text-slate-500">Favorites</p>
+        </div>
+        <div className="glass-card-sm p-3 text-center">
+          <Award size={18} className="mx-auto text-emerald-400" />
+          <p className="text-lg font-bold text-white mt-1">{stats.apps}</p>
+          <p className="text-xs text-slate-500">Apps</p>
+        </div>
+      </div>
+
+      {/* ─── Tabs ─── */}
       <div className="flex flex-wrap gap-2 border-b border-white/5 pb-2">
         {tabs.map((tab) => (
           <button
@@ -347,9 +375,7 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* ============================================================ */}
-      {/* TAB 1: Personal Info */}
-      {/* ============================================================ */}
+      {/* ─── TAB: Personal Info ─── */}
       {activeTab === 'personal' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Personal Information</h2>
@@ -429,25 +455,21 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* TAB 2: Security */}
-      {/* ============================================================ */}
+      {/* ─── TAB: Security ─── */}
       {activeTab === 'security' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Security</h2>
-          
-          {/* Password */}
+
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Password</p>
-              <p className="text-sm text-slate-400">Last changed: —</p>
+              <p className="text-sm text-slate-400">Change your password</p>
             </div>
             <Link to="/change-password" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               Change <ChevronRight size={16} />
             </Link>
           </div>
 
-          {/* Two‑Factor Authentication */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Two‑Factor Authentication</p>
@@ -460,7 +482,6 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* Email Verification */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Email Verification</p>
@@ -478,7 +499,6 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Connected Devices */}
           <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Connected Devices</p>
@@ -491,14 +511,11 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* TAB 3: Privacy & Data */}
-      {/* ============================================================ */}
+      {/* ─── TAB: Privacy & Data ─── */}
       {activeTab === 'privacy' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Privacy & Data</h2>
 
-          {/* Data Export */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
             <div>
               <p className="text-white font-medium">Data Export</p>
@@ -509,19 +526,7 @@ export default function Profile() {
             </Link>
           </div>
 
-          {/* Delete Account */}
           <div className="flex items-center justify-between py-3 border-b border-white/5">
-            <div>
-              <p className="text-white font-medium">Delete Account</p>
-              <p className="text-sm text-red-400">Permanently delete your data</p>
-            </div>
-            <Link to="/settings/delete" className="text-red-400 hover:underline text-sm flex items-center gap-1">
-              <Trash2 size={14} /> Delete Account
-            </Link>
-          </div>
-
-          {/* Activity Log */}
-          <div className="flex items-center justify-between py-3">
             <div>
               <p className="text-white font-medium">Activity Log</p>
               <p className="text-sm text-slate-400">Review your recent activity</p>
@@ -530,24 +535,32 @@ export default function Profile() {
               <Activity size={14} /> View Activity
             </Link>
           </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-white font-medium">Delete Account</p>
+              <p className="text-sm text-red-400">Permanently delete your data</p>
+            </div>
+            <Link to="/settings/delete" className="text-red-400 hover:underline text-sm flex items-center gap-1">
+              <Trash2 size={14} /> Delete Account
+            </Link>
+          </div>
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* TAB 4: Connected Apps */}
-      {/* ============================================================ */}
+      {/* ─── TAB: Connected Apps ─── */}
       {activeTab === 'apps' && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Connected Apps</h2>
           <p className="text-sm text-slate-400">
             Apps and services that use your VexaAccount.
           </p>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Smartphone size={20} className="text-cyan-400" />
+                  <Download size={20} className="text-cyan-400" />
                 </div>
                 <div>
                   <p className="text-white font-medium">VexaStore</p>
@@ -558,8 +571,8 @@ export default function Profile() {
             </div>
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <TrendingUp size={20} className="text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                  <TrendingUp size={20} className="text-purple-400" />
                 </div>
                 <div>
                   <p className="text-white font-medium">VexaTrade</p>
@@ -570,8 +583,8 @@ export default function Profile() {
             </div>
             <div className="flex items-center justify-between py-3 border-b border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Wallet size={20} className="text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <Wallet size={20} className="text-emerald-400" />
                 </div>
                 <div>
                   <p className="text-white font-medium">VexaWallet</p>
@@ -580,51 +593,25 @@ export default function Profile() {
               </div>
               <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
             </div>
-            <div className="flex items-center justify-between py-3 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Mail size={20} className="text-cyan-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">VexaEmail</p>
-                  <p className="text-xs text-slate-400">Coming soon</p>
-                </div>
-              </div>
-              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
-            </div>
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Globe size={20} className="text-cyan-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">VexaBrowser</p>
-                  <p className="text-xs text-slate-400">Coming soon</p>
-                </div>
-              </div>
-              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
-            </div>
           </div>
 
-          {/* Manage Apps Link */}
           <div className="mt-4">
             <Link to="/settings/apps" className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               <Layers size={14} /> Manage Connected Apps →
             </Link>
           </div>
 
-          {/* Info Box */}
           <div className="mt-2 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
             <p className="text-sm text-slate-400">
               💡 <span className="text-white font-medium">One Account, All Vexa Apps</span>
               <br />
-              Your VexaAccount works across VexaStore, VexaTrade, VexaWallet, VexaEmail, and VexaBrowser.
+              Your VexaAccount works across VexaStore, VexaTrade, VexaWallet, and more.
             </p>
           </div>
         </div>
       )}
 
-      {/* Logout */}
+      {/* ─── Logout ─── */}
       <button
         onClick={handleLogout}
         className="btn-danger w-full flex items-center justify-center gap-2 py-3"
