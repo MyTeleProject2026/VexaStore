@@ -119,7 +119,7 @@ function App() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={clientId} onScriptLoadError={() => console.warn('Google OAuth script failed to load')}>
       <NotificationProvider>
         <Suspense fallback={<LoadingSpinner message="Loading..." />}>
           <AppContent />
