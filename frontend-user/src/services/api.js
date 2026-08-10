@@ -1,58 +1,52 @@
-// frontend-user/src/services/api.js
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vexastore-backend.onrender.com';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-api.interceptors.request.use(
-  (config) => {
-    // ✅ Check all possible token keys
-    const token = 
-      localStorage.getItem('vexastore_user_token') ||
-      localStorage.getItem('userToken') ||
-      localStorage.getItem('token') ||
-      localStorage.getItem('accessToken');
-      
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message || error.message || 'Something went wrong';
-    return Promise.reject({ ...error, userMessage: message });
+    if (error.response?.status === 401) {
+      // Clear all auth tokens
+      localStorage.removeItem('vexastore_user_token');
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('vexastore_user');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userData');
+    }
+    return Promise.reject(error);
   }
 );
 
 export const getApiErrorMessage = (err) => {
-  return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
+  return err?.response?.data?.message || err?.message || 'Something went wrong';
 };
-
-// ✅ REMOVED authApi – authentication now handled by VexaAccount SSO
-// All auth methods (login, register, OTP, etc.) are removed
 
 export const appApi = {
-  getApps: (params = {}) => api.get('/api/apps', { params }),
+  // ─── Apps ──────────────────────────────────────────────────
+  getApps: (params) => api.get('/api/apps', { params }),
   getApp: (slug) => api.get(`/api/apps/${slug}`),
-  getAppVersions: (slug, os) => api.get(`/api/apps/${slug}/versions/${os}`),
-  getCategories: () => api.get('/api/categories'),
-  trackDownload: (data) => api.post('/api/downloads/track', data),
-};
+  getFeatured: () => api.get('/api/apps/featured'),
 
-export const maintenanceApi = {
-  getStatus: () => api.get('/api/maintenance/status'),
+  // ─── Categories ────────────────────────────────────────────
+  getCategories: () => api.get('/api/categories'),
+  getCategory: (slug) => api.get(`/api/categories/${slug}`),
+  getCategoryApps: (slug, params) => api.get(`/api/categories/${slug}/apps`, { params }),
+
+  // ─── Downloads ─────────────────────────────────────────────
+  trackDownload: (data) => api.post('/api/downloads/track', data),
+
+  // ─── Maintenance ───────────────────────────────────────────
+  getMaintenanceStatus: () => api.get('/api/maintenance/status'),
 };
 
 export default api;
