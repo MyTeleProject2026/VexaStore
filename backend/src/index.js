@@ -52,14 +52,22 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:3000',
   'https://vexastore.onrender.com',
+  'https://vexastore.2bd.net'',
+  'https://www.vexastore.2bd.net',
   'https://vexastore-admin.onrender.com',
+  'https://admin-vexatrade-manage.onrender.com',
+  'https://vexatrade-admin-n36m.onrender.com',
+  'https://admin.vexatrade-v.2bd.net',
   'https://vexatrade-6nhs.onrender.com',
   'https://www.vexatrade-v.2bd.net',
-  'https://vexatrade-ecosystem-api.onrender.com',
+  'https://learn-vexatrade.onrender.com',
   'https://vexatrade.onrender.com',
   'https://vexatrade-admin.onrender.com',
   'https://api-vexaaccount.onrender.com',
-  'https://vexatrade-server.onrender.com'
+  'https://api-vexastore.onrender.com',
+  'https://vexatrade-5ycu.onrender.com',
+  'https://vexatrade-ecosystem-api.onrender.com',
+  'https://vexatrade-server.onrender.com',
 ];
 
 app.use(cors({
