@@ -114,6 +114,64 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+
+// ─── ROOT ENDPOINT ──────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '🚀 VexaStore API is running',
+    version: '2.0.0',
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    documentation: {
+      base_url: 'https://api-vexastore.onrender.com',
+      api: '/api',
+      health: '/api/health',
+      endpoints: {
+        public: [
+          { method: 'GET', path: '/api/apps', description: 'List all apps' },
+          { method: 'GET', path: '/api/apps/:slug', description: 'Get app by slug' },
+          { method: 'GET', path: '/api/apps/featured', description: 'Get featured apps' },
+          { method: 'GET', path: '/api/categories', description: 'List categories' },
+          { method: 'POST', path: '/api/auth/login', description: 'User login' },
+          { method: 'POST', path: '/api/auth/register', description: 'User register' },
+          { method: 'POST', path: '/api/auth/verify-otp', description: 'Verify OTP' },
+          { method: 'POST', path: '/api/auth/resend-otp', description: 'Resend OTP' },
+          { method: 'POST', path: '/api/auth/forgot-password', description: 'Forgot password' },
+          { method: 'POST', path: '/api/auth/reset-password', description: 'Reset password' },
+          { method: 'POST', path: '/api/downloads/track', description: 'Track download' },
+        ],
+        admin: [
+          { method: 'POST', path: '/api/admin/login', description: 'Admin login' },
+          { method: 'GET', path: '/api/admin/verify', description: 'Verify admin token' },
+          { method: 'GET', path: '/api/admin/apps', description: 'List apps (admin)' },
+          { method: 'POST', path: '/api/admin/apps', description: 'Create app' },
+          { method: 'PUT', path: '/api/admin/apps/:id', description: 'Update app' },
+          { method: 'DELETE', path: '/api/admin/apps/:id', description: 'Delete app' },
+          { method: 'POST', path: '/api/admin/versions', description: 'Add version' },
+          { method: 'DELETE', path: '/api/admin/versions/:id', description: 'Delete version' },
+          { method: 'GET', path: '/api/admin/categories', description: 'List categories (admin)' },
+          { method: 'POST', path: '/api/admin/categories', description: 'Create category' },
+          { method: 'PUT', path: '/api/admin/categories/:id', description: 'Update category' },
+          { method: 'DELETE', path: '/api/admin/categories/:id', description: 'Delete category' },
+          { method: 'GET', path: '/api/admin/news', description: 'List news' },
+          { method: 'POST', path: '/api/admin/news', description: 'Create news' },
+          { method: 'PUT', path: '/api/admin/news/:id', description: 'Update news' },
+          { method: 'DELETE', path: '/api/admin/news/:id', description: 'Delete news' },
+          { method: 'GET', path: '/api/admin/users', description: 'List users' },
+          { method: 'PUT', path: '/api/admin/users/:id', description: 'Update user' },
+          { method: 'DELETE', path: '/api/admin/users/:id', description: 'Delete user' },
+          { method: 'GET', path: '/api/admin/settings', description: 'Get settings' },
+          { method: 'PUT', path: '/api/admin/settings', description: 'Update settings' },
+          { method: 'POST', path: '/api/admin/settings/upload-logo', description: 'Upload logo' },
+          { method: 'POST', path: '/api/admin/settings/upload-favicon', description: 'Upload favicon' },
+          { method: 'POST', path: '/api/admin/maintenance/toggle', description: 'Toggle maintenance' },
+        ]
+      }
+    }
+  });
+});
+
 // Public routes
 app.use('/api/apps', appRoutes);
 app.use('/api/downloads', downloadRoutes);
