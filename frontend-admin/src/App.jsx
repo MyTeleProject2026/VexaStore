@@ -1,21 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { api } from './services/api';
 import { NotificationProvider, useNotification } from './hooks/useNotification';
+import ToastContainer from './components/ToastContainer';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Apps from './pages/Apps';
-import AddApp from './pages/AddApp';
-import EditApp from './pages/EditApp';
-import Versions from './pages/Versions';
-import Analytics from './pages/Analytics';
-import Maintenance from './pages/Maintenance';
-import Categories from './pages/Categories';
-import Users from './pages/Users';
-import News from './pages/News';
-import Settings from './pages/Settings';
+import LoadingSpinner from './components/LoadingSpinner';
 
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Apps = lazy(() => import('./pages/Apps'));
+const AddApp = lazy(() => import('./pages/AddApp'));
+const EditApp = lazy(() => import('./pages/EditApp'));
+const Versions = lazy(() => import('./pages/Versions'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Maintenance = lazy(() => import('./pages/Maintenance'));
+const Categories = lazy(() => import('./pages/Categories'));
+const Users = lazy(() => import('./pages/Users'));
+const News = lazy(() => import('./pages/News'));
+const Settings = lazy(() => import('./pages/Settings'));
+
+// ─── APP CONTENT ────────────────────────────────────────────────
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -40,14 +44,7 @@ function AppContent() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-dark-bg">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-text-secondary">Loading VexaStore Admin...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading VexaStore Admin..." />;
   }
 
   if (!isAuthenticated) {
@@ -55,31 +52,35 @@ function AppContent() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Layout onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/apps" element={<Apps />} />
-          <Route path="/apps/add" element={<AddApp />} />
-          <Route path="/apps/edit/:id" element={<EditApp />} />
-          <Route path="/apps/:id/versions" element={<Versions />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/maintenance" element={<Maintenance />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/apps" element={<Apps />} />
+            <Route path="/apps/add" element={<AddApp />} />
+            <Route path="/apps/edit/:id" element={<EditApp />} />
+            <Route path="/apps/:id/versions" element={<Versions />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/news" element={<News />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </BrowserRouter>
   );
 }
 
+// ─── MAIN APP ────────────────────────────────────────────────────
 function App() {
   return (
     <NotificationProvider>
       <AppContent />
+      <ToastContainer />
     </NotificationProvider>
   );
 }
