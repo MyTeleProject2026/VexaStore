@@ -19,6 +19,8 @@ export default function ConnectedApps() {
     );
   };
 
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+
   useEffect(() => {
     loadApps();
   }, []);
@@ -32,8 +34,7 @@ export default function ConnectedApps() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/connected-apps`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/connected-apps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -41,10 +42,8 @@ export default function ConnectedApps() {
       if (data.success) {
         setApps(data.data || []);
       } else {
-        // Fallback: show default apps
         setApps([
           { app_name: 'VexaStore', app_slug: 'vexastore', status: 'connected', connected_at: new Date().toISOString() },
-          { app_name: 'VexaTrade', app_slug: 'vexatrade', status: 'pending', connected_at: null },
         ]);
       }
     } catch (err) {
@@ -77,8 +76,7 @@ export default function ConnectedApps() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/disconnect-app`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/disconnect-app`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
