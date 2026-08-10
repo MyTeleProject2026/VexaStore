@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Download, Smartphone, Phone, Monitor, Laptop, Terminal,
-  TrendingUp, Award, Zap, Shield, Sparkles, ArrowRight,
-  Newspaper, Clock, ChevronRight
+  TrendingUp, Zap, Shield, Sparkles, ArrowRight,
 } from 'lucide-react';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
@@ -73,7 +72,7 @@ export default function HomePage() {
             Discover <span className="gradient-text">Apps</span>
           </h1>
           <p className="text-slate-400 text-sm md:text-base max-w-xl mb-4">
-            Download verified apps from the VexaTrade ecosystem. iOS, Android, Windows, macOS, Linux.
+            Download verified apps from the VexaTrade ecosystem.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-semibold text-sm hover:scale-[1.02] transition">
@@ -118,9 +117,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── News Section ─── */}
-      {news.length > 0 && (
-        <NewsSection news={news} />
-      )}
+      {news.length > 0 && <NewsSection news={news} />}
 
       {/* ─── Featured ─── */}
       {featured.length > 0 && (
