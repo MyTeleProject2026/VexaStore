@@ -2,6 +2,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -34,7 +35,7 @@ export const appApi = {
   // ─── Apps ──────────────────────────────────────────────────
   getApps: (params) => api.get('/api/apps', { params }),
   getApp: (slug) => api.get(`/api/apps/${slug}`),
-  getFeatured: () => api.get('/api/apps/featured'),
+  getFeatured: () => api.get('/api/apps/featured'), // ✅ Now works
 
   // ─── Categories ────────────────────────────────────────────
   getCategories: () => api.get('/api/categories'),
@@ -45,7 +46,7 @@ export const appApi = {
   trackDownload: (data) => api.post('/api/downloads/track', data),
 
   // ─── News ──────────────────────────────────────────────────
-  getNews: () => api.get('/api/admin/settings/news'),
+  getNews: () => api.get('/api/admin/settings/news'), // ✅ Uses admin route
 
   // ─── Maintenance ───────────────────────────────────────────
   getMaintenanceStatus: () => api.get('/api/maintenance/status'),
