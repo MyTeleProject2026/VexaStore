@@ -22,6 +22,8 @@ export default function DeleteAccount() {
     );
   };
 
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+
   const handleDelete = async () => {
     if (confirmText !== 'DELETE') {
       showError('Please type "DELETE" to confirm');
@@ -41,8 +43,7 @@ export default function DeleteAccount() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/delete-account`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/delete-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +54,6 @@ export default function DeleteAccount() {
 
       const data = await response.json();
       if (data.success) {
-        // Clear all local storage
         localStorage.clear();
         showSuccess('Account deleted successfully');
         setStep(3);
@@ -116,11 +116,7 @@ export default function DeleteAccount() {
                 </div>
               </div>
             </div>
-
-            <button
-              onClick={() => setStep(2)}
-              className="btn-danger w-full flex items-center justify-center gap-2 py-3"
-            >
+            <button onClick={() => setStep(2)} className="btn-danger w-full flex items-center justify-center gap-2 py-3">
               <Trash2 size={18} /> I understand, continue
             </button>
           </>
@@ -171,10 +167,7 @@ export default function DeleteAccount() {
                 {loading ? <span className="spinner-small" /> : <Trash2 size={18} />}
                 {loading ? 'Deleting...' : 'Permanently Delete Account'}
               </button>
-              <button
-                onClick={() => setStep(1)}
-                className="btn-secondary"
-              >
+              <button onClick={() => setStep(1)} className="btn-secondary">
                 Cancel
               </button>
             </div>
