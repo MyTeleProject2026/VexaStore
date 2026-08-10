@@ -1,135 +1,110 @@
+// backend/src/routes/apps.js
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// ──────────────────────────────────────────────────────────────
+// GET: List all apps (public)
+// ──────────────────────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
-    const { category, os, featured, search, limit = 20, offset = 0 } = req.query;
+    const { category, featured, limit = 20, offset = 0, search } = req.query;
 
     let query = `
-      SELECT
-        a.*,
-        c.name as category_name,
-        c.slug as category_slug,
+      SELECT a.*, c.name as category_name,
         (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 AND is_active = 1 LIMIT 1) as latest_version,
         (SELECT COUNT(*) FROM app_versions WHERE app_id = a.id AND is_active = 1) as version_count
       FROM apps a
       LEFT JOIN categories c ON c.id = a.category_id
       WHERE a.is_active = 1
     `;
-
     const params = [];
 
     if (category) {
-      query += ` AND c.slug = ?`;
+      query += ' AND a.category_id = ?';
       params.push(category);
     }
-
     if (featured === 'true') {
-      query += ` AND a.is_featured = 1`;
+      query += ' AND a.is_featured = 1';
     }
-
     if (search) {
-      query += ` AND (a.name LIKE ? OR a.description LIKE ? OR a.long_description LIKE ?)`;
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
+      query += ' AND (a.name LIKE ? OR a.description LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
     }
 
-    if (os) {
-      query += ` AND EXISTS (SELECT 1 FROM app_versions WHERE app_id = a.id AND os = ? AND is_active = 1)`;
-      params.push(os);
-    }
-
-    query += ` ORDER BY a.is_featured DESC, a.total_downloads DESC, a.rating DESC LIMIT ? OFFSET ?`;
+    query += ' ORDER BY a.total_downloads DESC, a.created_at DESC LIMIT ? OFFSET ?';
     params.push(Number(limit), Number(offset));
 
     const [rows] = await pool.query(query, params);
 
-    for (const app of rows) {
-      const [versions] = await pool.query(
-        `SELECT id, version, os, file_url, file_size, release_notes, download_count, created_at
-         FROM app_versions
-         WHERE app_id = ? AND is_active = 1
-         ORDER BY os ASC, created_at DESC`,
-        [app.id]
-      );
-      app.versions = versions;
-    }
+    // Get total count
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) as total FROM apps WHERE is_active = 1`
+    );
 
-    res.json({ success: true, data: rows });
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: countRows[0]?.total || 0,
+        limit: Number(limit),
+        offset: Number(offset)
+      }
+    });
   } catch (error) {
     next(error);
   }
 });
 
+// ──────────────────────────────────────────────────────────────
+// GET: Get single app by slug (public)
+// ──────────────────────────────────────────────────────────────
 router.get('/:slug', async (req, res, next) => {
   try {
-    const { slug } = req.params;
-
-    const [rows] = await pool.query(
-      `SELECT
-        a.*,
-        c.name as category_name,
-        c.slug as category_slug
+    const [appRows] = await pool.query(
+      `SELECT a.*, c.name as category_name
        FROM apps a
        LEFT JOIN categories c ON c.id = a.category_id
        WHERE a.slug = ? AND a.is_active = 1`,
-      [slug]
+      [req.params.slug]
     );
 
-    if (!rows.length) {
+    if (appRows.length === 0) {
       return res.status(404).json({ success: false, message: 'App not found' });
     }
 
-    const app = rows[0];
-
-    const [versions] = await pool.query(
-      `SELECT id, version, os, file_url, file_size, release_notes, is_latest, download_count, created_at
-       FROM app_versions
-       WHERE app_id = ? AND is_active = 1
-       ORDER BY os ASC, created_at DESC`,
-      [app.id]
+    const [versionRows] = await pool.query(
+      `SELECT * FROM app_versions WHERE app_id = ? AND is_active = 1 ORDER BY created_at DESC`,
+      [appRows[0].id]
     );
-    app.versions = versions;
 
-    const [reviews] = await pool.query(
-      `SELECT rating, review, user_email, created_at
-       FROM app_reviews
-       WHERE app_id = ?
-       ORDER BY created_at DESC
-       LIMIT 10`,
-      [app.id]
-    );
-    app.reviews = reviews;
-
-    res.json({ success: true, data: app });
+    res.json({
+      success: true,
+      data: {
+        ...appRows[0],
+        versions: versionRows
+      }
+    });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/:slug/versions/:os', async (req, res, next) => {
+// ──────────────────────────────────────────────────────────────
+// GET: Featured apps (public)
+// ──────────────────────────────────────────────────────────────
+router.get('/featured', async (req, res, next) => {
   try {
-    const { slug, os } = req.params;
-
-    const [appRows] = await pool.query(
-      `SELECT id FROM apps WHERE slug = ? AND is_active = 1`,
-      [slug]
+    const [rows] = await pool.query(
+      `SELECT a.*, c.name as category_name,
+        (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 AND is_active = 1 LIMIT 1) as latest_version
+       FROM apps a
+       LEFT JOIN categories c ON c.id = a.category_id
+       WHERE a.is_active = 1 AND a.is_featured = 1
+       ORDER BY a.total_downloads DESC
+       LIMIT 10`
     );
-
-    if (!appRows.length) {
-      return res.status(404).json({ success: false, message: 'App not found' });
-    }
-
-    const [versions] = await pool.query(
-      `SELECT id, version, file_url, file_size, release_notes, download_count, created_at
-       FROM app_versions
-       WHERE app_id = ? AND os = ? AND is_active = 1
-       ORDER BY created_at DESC`,
-      [appRows[0].id, os]
-    );
-
-    res.json({ success: true, data: versions });
+    res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
   }
