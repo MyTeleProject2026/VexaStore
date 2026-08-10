@@ -10,16 +10,27 @@ export default function UserAvatar({ user, size = 'md', className = '' }) {
   const name = user?.name || 'U';
   const avatarUrl = user?.avatar_url;
 
+  // ✅ If avatar URL exists, show image
   if (avatarUrl) {
     return (
       <img
         src={avatarUrl}
         alt={name}
         className={`rounded-full object-cover border-2 border-cyan-500/20 ${sizeClass} ${className}`}
+        onError={(e) => {
+          // ✅ If image fails to load, fallback to initials
+          e.target.style.display = 'none';
+          e.target.parentElement.innerHTML = `
+            <div class="rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 ${sizeClass} ${className}">
+              <span class="font-bold text-cyan-400">${name.charAt(0).toUpperCase()}</span>
+            </div>
+          `;
+        }}
       />
     );
   }
 
+  // ✅ Fallback to initials
   return (
     <div className={`rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 ${sizeClass} ${className}`}>
       <span className="font-bold text-cyan-400">{name.charAt(0).toUpperCase()}</span>
