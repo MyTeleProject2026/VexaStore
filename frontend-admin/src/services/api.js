@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vexastore-backend.onrender.com';
 
 const getToken = () => localStorage.getItem('vexastore_admin_token');
 
@@ -12,6 +12,7 @@ export const adminApi = axios.create({
   },
 });
 
+// ─── Request Interceptor ──────────────────────────────────────
 adminApi.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -23,6 +24,7 @@ adminApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// ─── Response Interceptor ──────────────────────────────────────
 adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -39,106 +41,100 @@ export const getApiErrorMessage = (err) => {
   return err?.userMessage || err?.response?.data?.message || err?.message || 'Network error';
 };
 
+// ─── API SERVICE ──────────────────────────────────────────────
 export const api = {
+  // ─── Auth ──────────────────────────────────────────────────
   adminLogin: (data) => adminApi.post('/api/admin/login', data),
+  verifyToken: () => adminApi.get('/api/admin/verify'),
 
-  // Apps
-  getApps: () => adminApi.get('/api/admin/apps'),
+  // ─── Apps ──────────────────────────────────────────────────
+  getApps: (params) => adminApi.get('/api/admin/apps', { params }),
   getApp: (id) => adminApi.get(`/api/admin/apps/${id}`),
   createApp: (data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) {
-        formData.append(key, data[key]);
-      }
-    });
-    return adminApi.post('/api/admin/apps', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    if (data instanceof FormData) {
+      return adminApi.post('/api/admin/apps', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return adminApi.post('/api/admin/apps', data);
   },
   updateApp: (id, data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) {
-        formData.append(key, data[key]);
-      }
-    });
-    return adminApi.put(`/api/admin/apps/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    if (data instanceof FormData) {
+      return adminApi.put(`/api/admin/apps/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return adminApi.put(`/api/admin/apps/${id}`, data);
   },
   deleteApp: (id) => adminApi.delete(`/api/admin/apps/${id}`),
 
-  // Versions
+  // ─── Versions ──────────────────────────────────────────────
   addVersion: (data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined && data[key] !== null) {
-        formData.append(key, data[key]);
-      }
-    });
-    return adminApi.post('/api/admin/versions', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    if (data instanceof FormData) {
+      return adminApi.post('/api/admin/versions', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return adminApi.post('/api/admin/versions', data);
   },
   deleteVersion: (id) => adminApi.delete(`/api/admin/versions/${id}`),
 
-  // Categories
+  // ─── Categories ────────────────────────────────────────────
   getCategories: () => adminApi.get('/api/categories'),
-  
-  // Admin Categories
-  getAdminCategories: () => adminApi.get('/api/admin/settings/categories'),
-  createCategory: (data) => adminApi.post('/api/admin/settings/categories', data),
-  updateCategory: (id, data) => adminApi.put(`/api/admin/settings/categories/${id}`, data),
-  deleteCategory: (id) => adminApi.delete(`/api/admin/settings/categories/${id}`),
+  getAdminCategories: () => adminApi.get('/api/admin/categories'),
+  createCategory: (data) => adminApi.post('/api/admin/categories', data),
+  updateCategory: (id, data) => adminApi.put(`/api/admin/categories/${id}`, data),
+  deleteCategory: (id) => adminApi.delete(`/api/admin/categories/${id}`),
 
-  // News
-  getNews: () => adminApi.get('/api/admin/settings/news'),
+  // ─── News ──────────────────────────────────────────────────
+  getNews: () => adminApi.get('/api/admin/news'),
   createNews: (data) => {
     if (data instanceof FormData) {
-      return adminApi.post('/api/admin/settings/news', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      return adminApi.post('/api/admin/news', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
     }
-    return adminApi.post('/api/admin/settings/news', data);
+    return adminApi.post('/api/admin/news', data);
   },
   updateNews: (id, data) => {
     if (data instanceof FormData) {
-      return adminApi.put(`/api/admin/settings/news/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      return adminApi.put(`/api/admin/news/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
     }
-    return adminApi.put(`/api/admin/settings/news/${id}`, data);
+    return adminApi.put(`/api/admin/news/${id}`, data);
   },
-  deleteNews: (id) => adminApi.delete(`/api/admin/settings/news/${id}`),
+  deleteNews: (id) => adminApi.delete(`/api/admin/news/${id}`),
 
-  // Users
-  getUsers: () => adminApi.get('/api/admin/settings/users'),
-  updateUser: (id, data) => adminApi.put(`/api/admin/settings/users/${id}`, data),
-  deleteUser: (id) => adminApi.delete(`/api/admin/settings/users/${id}`),
+  // ─── Users ──────────────────────────────────────────────────
+  getUsers: (params) => adminApi.get('/api/admin/users', { params }),
+  updateUser: (id, data) => adminApi.put(`/api/admin/users/${id}`, data),
+  deleteUser: (id) => adminApi.delete(`/api/admin/users/${id}`),
 
-  // Settings
+  // ─── Settings ──────────────────────────────────────────────
   getSettings: () => adminApi.get('/api/admin/settings'),
   updateSettings: (data) => adminApi.put('/api/admin/settings', data),
   uploadLogo: (file) => {
     const formData = new FormData();
     formData.append('logo', file);
     return adminApi.post('/api/admin/settings/upload-logo', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
   uploadFavicon: (file) => {
     const formData = new FormData();
     formData.append('favicon', file);
     return adminApi.post('/api/admin/settings/upload-favicon', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
-  // Downloads
+  // ─── Downloads / Analytics ─────────────────────────────────
   getDownloadStats: (period) => adminApi.get(`/api/downloads/stats?period=${period || '30d'}`),
 
-  // Maintenance
+  // ─── Maintenance ────────────────────────────────────────────
   getMaintenanceStatus: () => adminApi.get('/api/maintenance/status'),
   toggleMaintenance: (data) => adminApi.post('/api/admin/maintenance/toggle', data),
 };
+
+export default api;
