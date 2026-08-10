@@ -21,8 +21,8 @@ export default function OSFilter({ selected, onChange, className = '' }) {
             onClick={() => onChange(os.value)}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition ${
               isActive
-                ? 'bg-accent-primary text-black'
-                : 'bg-dark-card border border-dark-border text-text-secondary hover:bg-dark-card/80'
+                ? 'bg-cyan-500 text-black'
+                : 'bg-[#0a0e1a] border border-white/5 text-slate-400 hover:bg-[#0a0e1a]/80'
             }`}
           >
             <Icon size={16} />
