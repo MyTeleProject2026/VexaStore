@@ -7,9 +7,9 @@ import {
   Shield, Lock, Globe, Smartphone,
   ChevronRight, CheckCircle, Edit2,
   ArrowLeft, Database,
-  Clock, Layers, Key, Eye, EyeOff, Save,
+  Clock, Layers, Key, Save,
   Download, Trash2, Activity, TrendingUp, Wallet,
-  Settings, Heart, Award, Zap, Sparkles
+  Settings, Heart, Award
 } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 
@@ -28,8 +28,10 @@ export default function Profile() {
     downloads: 0,
     favorites: 0,
     reviews: 0,
-    memberSince: ''
   });
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
 
   const getUserFromStorage = () => {
     try {
@@ -78,8 +80,7 @@ export default function Profile() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -95,10 +96,9 @@ export default function Profile() {
           bio: userData.bio || '',
         });
 
-        // Try to get stats
+        // Try to get stats from VexaStore
         try {
-          const vexaStoreUrl = import.meta.env.VITE_API_BASE_URL || 'https://vexastore-backend.onrender.com';
-          const statsRes = await fetch(`${vexaStoreUrl}/api/user/stats`, {
+          const statsRes = await fetch(`${API_BASE_URL}/api/user/stats`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const statsData = await statsRes.json();
@@ -147,8 +147,7 @@ export default function Profile() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/profile/full`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/full`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -199,30 +198,45 @@ export default function Profile() {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result;
+      // ✅ Upload to VexaStore backend (Cloudinary)
+      const formData = new FormData();
+      formData.append('avatar', file);
 
-        const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-        const response = await fetch(`${vexaAccountUrl}/api/auth/profile/picture`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ avatar_url: base64String })
-        });
+      const uploadResponse = await fetch(`${API_BASE_URL}/api/upload/avatar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
-        const data = await response.json();
-        if (data.success) {
-          showSuccess('Avatar updated');
-          fetchProfile();
-        } else {
-          showError(data.message || 'Avatar update failed');
-        }
-      };
-      reader.readAsDataURL(file);
+      const uploadData = await uploadResponse.json();
 
+      if (!uploadData.success) {
+        showError(uploadData.message || 'Avatar upload failed');
+        return;
+      }
+
+      const avatarUrl = uploadData.avatar_url;
+
+      // ✅ Update profile with Cloudinary URL
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/picture`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ avatar_url: avatarUrl })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showSuccess('Avatar updated successfully');
+        fetchProfile();
+      } else {
+        showError(data.message || 'Avatar update failed');
+      }
     } catch (err) {
       showError('Avatar upload failed');
     } finally {
@@ -238,8 +252,7 @@ export default function Profile() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/resend-verification`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/resend-verification`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -256,13 +269,12 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('vexastore_user_token');
-    localStorage.removeItem('vexastore_user');
-    localStorage.removeItem('userToken');
-    localStorage.removeItem('token');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userData');
+    const keys = [
+      'vexastore_user_token', 'vexastore_user',
+      'userToken', 'token', 'accessToken',
+      'user', 'userData'
+    ];
+    keys.forEach(key => localStorage.removeItem(key));
     showSuccess('Logged out');
     navigate('/');
   };
@@ -572,18 +584,6 @@ export default function Profile() {
                 <div>
                   <p className="text-white font-medium">VexaTrade</p>
                   <p className="text-xs text-slate-400">Crypto Trading Platform</p>
-                </div>
-              </div>
-              <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Wallet size={20} className="text-cyan-400" />
-                </div>
-                <div>
-                  <p className="text-white font-medium">VexaWallet</p>
-                  <p className="text-xs text-slate-400">Coming soon</p>
                 </div>
               </div>
               <span className="text-xs bg-slate-500/20 text-slate-300 px-2 py-0.5 rounded-full">Pending</span>
