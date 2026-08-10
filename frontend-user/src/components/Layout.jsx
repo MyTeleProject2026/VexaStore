@@ -1,3 +1,4 @@
+// frontend-user/src/components/Layout.jsx
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, Menu, X, Download, Smartphone, Phone, Monitor, Laptop, Terminal,
@@ -6,6 +7,7 @@ import {
   Edit2, AppWindow, Layers, Wifi, FileText
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import UserAvatar from './UserAvatar';
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -75,41 +77,18 @@ export default function Layout() {
     { slug: 'linux', label: 'Linux', icon: Terminal, color: 'text-amber-400' },
   ];
 
-  // ─── User Avatar ───
-  const UserAvatar = ({ user, size = 'md' }) => {
-    const sizeClass = size === 'lg' ? 'w-16 h-16 text-2xl' : 'w-12 h-12 text-lg';
-    const name = user?.name || 'U';
-    const avatarUrl = user?.avatar_url;
-
-    if (avatarUrl) {
-      return (
-        <img
-          src={avatarUrl}
-          alt={name}
-          className={`rounded-full object-cover border-2 border-cyan-500/20 ${sizeClass}`}
-        />
-      );
-    }
-
-    return (
-      <div className={`rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 ${sizeClass}`}>
-        <span className="font-bold text-cyan-400">{name.charAt(0).toUpperCase()}</span>
-      </div>
-    );
-  };
-
-  // ─── Sidebar Link ───
+  // ─── Sidebar Link Component ───
   const SidebarLink = ({ to, icon: Icon, label, onClick, isActive, className = '' }) => (
     <NavLink
       to={to}
       onClick={onClick}
       className={({ isActive: active }) => `
-        flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm
+        flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm
         ${(isActive || active) ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-300 hover:bg-white/5'}
         ${className}
       `}
     >
-      <Icon size={20} className="flex-shrink-0" />
+      <Icon size={18} className="flex-shrink-0" />
       <span className="font-medium truncate">{label}</span>
     </NavLink>
   );
@@ -118,18 +97,18 @@ export default function Layout() {
   const SidebarButton = ({ icon: Icon, label, onClick, className = '' }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition text-sm ${className}`}
+      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl transition text-sm ${className}`}
     >
-      <Icon size={20} className="flex-shrink-0" />
+      <Icon size={18} className="flex-shrink-0" />
       <span className="font-medium truncate">{label}</span>
     </button>
   );
 
   // ─── Sidebar Content ───
   const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* ─── User Profile Section ─── */}
-      <div className="mb-4 pb-4 border-b border-white/5">
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* ─── User Profile Section (ALWAYS VISIBLE) ─── */}
+      <div className="mb-4 pb-4 border-b border-white/5 flex-shrink-0">
         <NavLink to="/profile" onClick={() => setMobileMenuOpen(false)} className="block">
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition">
             <UserAvatar user={user} size="lg" />
@@ -150,13 +129,13 @@ export default function Layout() {
         )}
       </div>
 
-      {/* ─── Navigation Links ─── */}
-      <nav className="flex-1 space-y-1 overflow-y-auto">
+      {/* ─── Navigation Links (SCROLLABLE) ─── */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto">
         <SidebarLink to="/" icon={Home} label="Home" onClick={() => setMobileMenuOpen(false)} />
 
         {/* ─── Categories ─── */}
-        <div className="px-4 py-1">
-          <p className="text-[10px] uppercase tracking-wider text-slate-600 font-medium">Categories</p>
+        <div className="px-4 py-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">Categories</p>
         </div>
         {categories.map((cat) => (
           <SidebarLink
@@ -183,17 +162,17 @@ export default function Layout() {
         <div>
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="flex items-center justify-between w-full px-4 py-3 rounded-xl transition text-sm text-slate-300 hover:bg-white/5"
+            className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl transition text-sm text-slate-300 hover:bg-white/5"
           >
             <div className="flex items-center gap-3">
-              <Settings size={20} className="flex-shrink-0" />
+              <Settings size={18} className="flex-shrink-0" />
               <span className="font-medium">Settings</span>
             </div>
-            {settingsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            {settingsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </button>
 
           {settingsOpen && (
-            <div className="ml-6 space-y-1 border-l border-white/5 pl-3">
+            <div className="ml-6 space-y-0.5 border-l border-white/5 pl-3">
               <SidebarLink
                 to="/settings/apps"
                 icon={Layers}
@@ -234,9 +213,9 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* ─── Logout Button (Bottom) ─── */}
+      {/* ─── Logout Button (Fixed Bottom) ─── */}
       {isLoggedIn && (
-        <div className="border-t border-white/5 pt-3 mt-auto">
+        <div className="border-t border-white/5 pt-3 mt-auto flex-shrink-0">
           <SidebarButton
             icon={LogOut}
             label="Logout"
@@ -274,9 +253,10 @@ export default function Layout() {
             {isLoggedIn ? (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition"
+                className="p-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition flex items-center gap-1.5 px-2"
               >
-                <UserAvatar user={user} size="md" />
+                <UserAvatar user={user} size="sm" />
+                <span className="text-xs text-white hidden sm:inline">{user?.name?.split(' ')[0] || 'User'}</span>
               </button>
             ) : (
               <NavLink
@@ -333,9 +313,9 @@ export default function Layout() {
 
       {/* ─── Mobile Sidebar Drawer ─── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
           <div
-            className="w-[300px] h-full bg-[#0a0e1a] p-5 shadow-2xl border-r border-white/5 overflow-y-auto"
+            className="fixed top-0 left-0 w-[300px] h-full bg-[#0a0e1a] p-5 shadow-2xl border-r border-white/5 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <SidebarContent />
@@ -343,7 +323,7 @@ export default function Layout() {
         </div>
       )}
 
-      {/* ─── Desktop Sidebar (Hidden on mobile) ─── */}
+      {/* ─── Desktop Sidebar ─── */}
       <div className="hidden lg:flex gap-6 max-w-7xl mx-auto px-4 py-4">
         <aside className="w-[280px] flex-shrink-0 sticky top-20 h-[calc(100vh-100px)] overflow-y-auto">
           <div className="glass-card p-4 h-full">
