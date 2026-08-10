@@ -1,19 +1,23 @@
+// frontend-user/src/pages/HomePage.jsx
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Download, Smartphone, Phone, Monitor, Laptop, Terminal,
+  TrendingUp, Award, Zap, Shield, Sparkles, ArrowRight,
+  Newspaper, Clock, ChevronRight
+} from 'lucide-react';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 import AppCard from '../components/AppCard';
 import FeaturedApps from '../components/FeaturedApps';
 import OSFilter from '../components/OSFilter';
 import StatsCard from '../components/StatsCard';
-import {
-  Download, Smartphone, Phone, Monitor, Laptop, Terminal,
-  TrendingUp, Award, Zap, Shield, Sparkles, ArrowRight
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+import NewsSection from '../components/NewsSection';
 
 export default function HomePage() {
   const [apps, setApps] = useState([]);
   const [featured, setFeatured] = useState([]);
+  const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOS, setSelectedOS] = useState('');
   const { showError } = useNotification();
@@ -25,14 +29,16 @@ export default function HomePage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [appsRes, featuredRes] = await Promise.all([
+      const [appsRes, featuredRes, newsRes] = await Promise.all([
         appApi.getApps({ limit: 20 }),
         appApi.getFeatured(),
+        appApi.getNews(),
       ]);
       setApps(appsRes.data?.data || []);
       setFeatured(featuredRes.data?.data || []);
+      setNews(newsRes.data?.data || []);
     } catch (err) {
-      showError('Failed to load apps');
+      showError('Failed to load data');
       console.error(err);
     } finally {
       setLoading(false);
@@ -110,6 +116,11 @@ export default function HomePage() {
         <StatsCard label="Total Apps" value={apps.length} icon={Download} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
         <StatsCard label="Platforms" value="5" icon={Laptop} className="border border-white/5 hover:border-cyan-500/20 transition p-3" />
       </div>
+
+      {/* ─── News Section ─── */}
+      {news.length > 0 && (
+        <NewsSection news={news} />
+      )}
 
       {/* ─── Featured ─── */}
       {featured.length > 0 && (
