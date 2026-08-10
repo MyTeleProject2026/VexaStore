@@ -1,3 +1,4 @@
+// frontend-user/src/services/api.js
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vexastore-backend.onrender.com';
@@ -14,7 +15,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear all auth tokens
       localStorage.removeItem('vexastore_user_token');
       localStorage.removeItem('userToken');
       localStorage.removeItem('token');
@@ -44,6 +44,9 @@ export const appApi = {
 
   // ─── Downloads ─────────────────────────────────────────────
   trackDownload: (data) => api.post('/api/downloads/track', data),
+
+  // ─── News ──────────────────────────────────────────────────
+  getNews: () => api.get('/api/admin/settings/news'),
 
   // ─── Maintenance ───────────────────────────────────────────
   getMaintenanceStatus: () => api.get('/api/maintenance/status'),
