@@ -1,11 +1,10 @@
-// frontend-user/src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, LogIn } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 
-// ✅ VexaAccount SVG Icon
+// ─── VexaAccount SVG Icon ───
 const VexaAccountIcon = ({ className = "w-5 h-5" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={className}>
     <defs>
@@ -36,7 +35,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Google OAuth (through VexaAccount)
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -62,7 +60,7 @@ export default function Login() {
     onError: () => showError('❌ Google login failed'),
   });
 
-  // ✅ Manual Login with VexaAccount API (via axios)
+  // ─── Manual Login via VexaAccount ───
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
@@ -72,7 +70,6 @@ export default function Login() {
 
     try {
       setLoading(true);
-      
       const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
       
       const response = await fetch(`${vexaAccountUrl}/api/auth/login`, {
@@ -84,7 +81,6 @@ export default function Login() {
       const data = await response.json();
       
       if (data.success && data.token) {
-        // ✅ Store token
         localStorage.setItem('vexastore_user_token', data.token);
         localStorage.setItem('userToken', data.token);
         localStorage.setItem('token', data.token);
@@ -98,24 +94,17 @@ export default function Login() {
         
         showSuccess('Login successful');
         navigate('/');
-      } else if (data.requiresAuthenticator2fa) {
-        // Redirect to 2FA page (VexaAccount will handle it)
-        showError('2FA required. Please use "Continue with VexaAccount"');
-        // Or redirect to VexaAccount login with 2FA flag
-        const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-        window.location.href = `${vexaAccountUrl}/api/auth/login?redirect_uri=${redirectUri}&2fa=${data.userId}`;
       } else {
         showError(data.message || 'Login failed');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Login failed';
-      showError(`❌ ${msg}`);
+      showError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Continue with VexaAccount (SSO)
+  // ─── Continue with VexaAccount (SSO) ───
   const handleVexaAccountLogin = () => {
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
@@ -123,7 +112,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#050812] p-4">
       <div className="glass-card max-w-md w-full p-6">
         <button onClick={() => navigate('/')} className="text-slate-400 hover:text-white transition mb-4">
           <ArrowLeft size={20} />
@@ -131,7 +120,7 @@ export default function Login() {
         <h1 className="text-2xl font-bold gradient-text text-center mb-2">Welcome Back</h1>
         <p className="text-slate-400 text-center text-sm mb-6">Sign in to access your downloads and favorites</p>
 
-        {/* ✅ VexaAccount SSO Button */}
+        {/* ─── VexaAccount SSO ─── */}
         <button
           onClick={handleVexaAccountLogin}
           className="flex w-full items-center justify-center gap-3 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 font-semibold text-cyan-300 transition hover:bg-cyan-500/20 mb-4"
@@ -141,20 +130,16 @@ export default function Login() {
         </button>
 
         <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10"></div>
-          </div>
-          <div className="relative flex justify-center text-xs text-slate-500">
-            <span className="bg-dark-bg px-2">OR</span>
-          </div>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+          <div className="relative flex justify-center text-xs text-slate-500"><span className="bg-dark-bg px-2">OR</span></div>
         </div>
 
-        {/* ✅ Manual Login Form (uses VexaAccount API) */}
+        {/* ─── Manual Login ─── */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="input-label">Email</label>
             <div className="relative">
-              <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="email"
                 className="input-field pl-10"
@@ -168,7 +153,7 @@ export default function Login() {
           <div>
             <label className="input-label">Password</label>
             <div className="relative">
-              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 className="input-field pl-10 pr-12"
@@ -179,7 +164,7 @@ export default function Login() {
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -196,11 +181,7 @@ export default function Login() {
             disabled={loading}
             className="btn-primary w-full py-3 flex justify-center items-center gap-2"
           >
-            {loading ? (
-              <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              <LogIn size={18} />
-            )}
+            {loading ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <LogIn size={18} />}
             {loading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
@@ -209,14 +190,10 @@ export default function Login() {
           Don't have an account? <Link to="/register" className="text-cyan-400 hover:underline">Register</Link>
         </p>
 
-        {/* ✅ Google OAuth */}
+        {/* ─── Google OAuth ─── */}
         <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10"></div>
-          </div>
-          <div className="relative flex justify-center text-xs text-slate-500">
-            <span className="bg-dark-bg px-2">OR</span>
-          </div>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+          <div className="relative flex justify-center text-xs text-slate-500"><span className="bg-dark-bg px-2">OR</span></div>
         </div>
 
         <button
