@@ -1,3 +1,4 @@
+// frontend-user/src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
@@ -44,13 +45,13 @@ export default function Login() {
 
         const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
         const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-        
+
         sessionStorage.setItem('google_user_info', JSON.stringify({
           google_id: userInfo.sub,
           email: userInfo.email,
           name: userInfo.name || userInfo.email.split('@')[0]
         }));
-        
+
         window.location.href = `${vexaAccountUrl}/api/auth/google?redirect_uri=${redirectUri}`;
       } catch (err) {
         const msg = err.response?.data?.message || err.message || 'Google login failed';
@@ -60,7 +61,6 @@ export default function Login() {
     onError: () => showError('❌ Google login failed'),
   });
 
-  // ─── Manual Login via VexaAccount ───
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
@@ -71,7 +71,7 @@ export default function Login() {
     try {
       setLoading(true);
       const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      
+
       const response = await fetch(`${vexaAccountUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,19 +79,19 @@ export default function Login() {
       });
 
       const data = await response.json();
-      
+
       if (data.success && data.token) {
         localStorage.setItem('vexastore_user_token', data.token);
         localStorage.setItem('userToken', data.token);
         localStorage.setItem('token', data.token);
         localStorage.setItem('accessToken', data.token);
-        
+
         if (data.user) {
           localStorage.setItem('vexastore_user', JSON.stringify(data.user));
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('userData', JSON.stringify(data.user));
         }
-        
+
         showSuccess('Login successful');
         navigate('/');
       } else {
@@ -104,7 +104,6 @@ export default function Login() {
     }
   };
 
-  // ─── Continue with VexaAccount (SSO) ───
   const handleVexaAccountLogin = () => {
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
@@ -181,7 +180,7 @@ export default function Login() {
             disabled={loading}
             className="btn-primary w-full py-3 flex justify-center items-center gap-2"
           >
-            {loading ? <span className="w-4 h-4 border-2 border-black/30 border-t-transparent rounded-full animate-spin"></span> : <LogIn size={18} />}
+            {loading ? <span className="spinner-small" /> : <LogIn size={18} />}
             {loading ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
