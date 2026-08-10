@@ -1,3 +1,4 @@
+// frontend-user/src/hooks/useNotification.jsx
 import { createContext, useContext, useState, useCallback } from 'react';
 
 const NotificationContext = createContext();
