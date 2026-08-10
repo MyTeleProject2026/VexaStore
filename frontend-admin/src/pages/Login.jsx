@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api, getApiErrorMessage } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
-import { Download, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Download, Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -31,15 +31,21 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-bg p-4">
-      <div className="glass-card max-w-md w-full p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#050812] p-4">
+      {/* Background glow */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.06),transparent_60%)]" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.04),transparent_60%)]" />
+      </div>
+
+      <div className="glass-card max-w-md w-full p-6 sm:p-8 relative">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-accent-primary/20 flex items-center justify-center mx-auto mb-4">
-            <Download size={28} className="text-accent-primary" />
+          <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
+            <Download size={28} className="text-cyan-400" />
           </div>
           <h1 className="text-2xl font-bold gradient-text">VexaStore Admin</h1>
           <p className="text-text-secondary mt-2 text-sm">
-            Manage apps for the VexaTrade Blockchain Ecosystem
+            Manage apps for the VexaTrade Ecosystem
           </p>
         </div>
 
@@ -84,7 +90,7 @@ export default function Login({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+            className="btn-primary w-full py-3"
           >
             {loading ? (
               <>
@@ -97,8 +103,10 @@ export default function Login({ onLogin }) {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-text-secondary border-t border-dark-border pt-4">
-          <p>VexaStore — The Official App Hub of VexaTrade Blockchain Ecosystem</p>
+        <div className="mt-6 text-center border-t border-white/5 pt-4">
+          <p className="text-xs text-text-secondary">
+            VexaStore — Official App Hub of VexaTrade Ecosystem
+          </p>
         </div>
       </div>
     </div>
