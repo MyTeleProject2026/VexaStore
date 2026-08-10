@@ -1,24 +1,24 @@
+// backend/src/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-const { sendEmail, sendOtpEmail, sendResetEmail } = require('../services/emailService');
+const { sendOtpEmail, sendResetEmail } = require('../services/emailService');
 const { authUser } = require('../middleware/auth');
 const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
 function generateOTP() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Register
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/register', async (req, res, next) => {
-  const start = Date.now();
   const connection = await pool.getConnection();
   try {
     const { email, password, name } = req.body;
@@ -77,7 +77,6 @@ router.post('/register', async (req, res, next) => {
       console.error('❌ Failed to send OTP email:', emailError.message);
     }
 
-    console.log('⏱️ Registration completed in:', Date.now() - start, 'ms');
     res.json({
       success: true,
       message: 'Registration successful. Please verify your email with OTP.',
@@ -91,9 +90,9 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Verify OTP
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/verify-otp', async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
@@ -132,14 +131,16 @@ router.post('/verify-otp', async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Resend OTP
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/resend-otp', async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email required' });
+    }
 
     const [userRows] = await connection.query(
       'SELECT id, is_verified FROM store_users WHERE email = ?',
@@ -177,9 +178,9 @@ router.post('/resend-otp', async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Login
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -216,16 +217,22 @@ router.post('/login', async (req, res, next) => {
     res.json({
       success: true,
       token,
-      user: { id: user.id, email: user.email, name: user.name, is_verified: user.is_verified }
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        is_verified: user.is_verified,
+        avatar_url: user.avatar_url
+      }
     });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Google Login
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/google', async (req, res, next) => {
   try {
     const { google_id, email, name } = req.body;
@@ -262,16 +269,21 @@ router.post('/google', async (req, res, next) => {
     res.json({
       success: true,
       token,
-      user: { id: user.id, email: user.email, name: user.name }
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url
+      }
     });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Forgot Password
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/forgot-password', async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -315,9 +327,9 @@ router.post('/forgot-password', async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Reset Password
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/reset-password', async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
@@ -359,14 +371,15 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // GET: User Profile
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.get('/profile', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled FROM store_users WHERE id = ?',
+      `SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled
+       FROM store_users WHERE id = ?`,
       [userId]
     );
     if (!rows.length) {
@@ -379,19 +392,20 @@ router.get('/profile', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // PUT: Update Profile
-// ============================================================
-router.put('/profile/full', authUser, async (req, res, next) => {
+// ──────────────────────────────────────────────────────────────
+router.put('/profile', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name, phone, bio } = req.body;
+    const { name, phone, bio, avatar_url } = req.body;
 
     const updates = [];
     const values = [];
     if (name !== undefined) { updates.push('name = ?'); values.push(name.trim()); }
     if (phone !== undefined) { updates.push('phone = ?'); values.push(phone); }
     if (bio !== undefined) { updates.push('bio = ?'); values.push(bio); }
+    if (avatar_url !== undefined) { updates.push('avatar_url = ?'); values.push(avatar_url); }
 
     if (updates.length === 0) {
       return res.status(400).json({ success: false, message: 'No fields to update' });
@@ -404,7 +418,8 @@ router.put('/profile/full', authUser, async (req, res, next) => {
     );
 
     const [rows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled FROM store_users WHERE id = ?',
+      `SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at, twofa_enabled
+       FROM store_users WHERE id = ?`,
       [userId]
     );
 
@@ -415,9 +430,9 @@ router.put('/profile/full', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // PUT: Update Profile Picture
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.put('/profile/picture', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -439,9 +454,9 @@ router.put('/profile/picture', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Change Password
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/change-password', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -481,9 +496,9 @@ router.post('/change-password', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Resend Verification Email
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/resend-verification', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -517,9 +532,9 @@ router.post('/resend-verification', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // 2FA: Generate Secret & QR Code
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/twofa/generate', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -540,9 +555,9 @@ router.post('/twofa/generate', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // 2FA: Verify & Enable
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/twofa/verify-enable', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -577,9 +592,9 @@ router.post('/twofa/verify-enable', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Disable 2FA
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/twofa/disable', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -593,16 +608,17 @@ router.post('/twofa/disable', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // GET: Sessions
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.get('/sessions', authUser, async (req, res, next) => {
   try {
     const [rows] = await pool.query(
-      'SELECT user_agent, ip_address, created_at FROM user_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+      `SELECT user_agent, ip_address, created_at FROM user_activity_logs
+       WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`,
       [req.user.id]
     );
-    
+
     res.json({
       success: true,
       data: [
@@ -621,17 +637,17 @@ router.get('/sessions', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // GET: Activity Log
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.get('/activity-log', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const [rows] = await pool.query(
-      `SELECT action, ip_address, user_agent, created_at 
-       FROM user_activity_logs 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC 
+      `SELECT action, ip_address, user_agent, created_at
+       FROM user_activity_logs
+       WHERE user_id = ?
+       ORDER BY created_at DESC
        LIMIT 50`,
       [userId]
     );
@@ -641,38 +657,42 @@ router.get('/activity-log', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // GET: Export Data
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.get('/export-data', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
+
     const [userRows] = await pool.query(
-      'SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at FROM store_users WHERE id = ?',
+      `SELECT id, email, name, avatar_url, phone, bio, is_verified, is_active, created_at
+       FROM store_users WHERE id = ?`,
       [userId]
     );
-    
+
     const [activityRows] = await pool.query(
-      'SELECT action, ip_address, user_agent, created_at FROM user_activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 100',
+      `SELECT action, ip_address, user_agent, created_at
+       FROM user_activity_logs
+       WHERE user_id = ?
+       ORDER BY created_at DESC LIMIT 100`,
       [userId]
     );
-    
+
     const exportData = {
       user: userRows[0] || null,
       activity: activityRows || [],
       exported_at: new Date().toISOString(),
     };
-    
+
     res.json({ success: true, data: exportData });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Delete Account
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/delete-account', authUser, async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
@@ -701,81 +721,87 @@ router.post('/delete-account', authUser, async (req, res, next) => {
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // GET: Connected Apps
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.get('/connected-apps', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
+
     const [rows] = await pool.query(
-      'SELECT app_name, app_slug, status, connected_at, last_used_at FROM user_connected_apps WHERE user_id = ? ORDER BY connected_at DESC',
+      `SELECT app_name, app_slug, status, connected_at, last_used_at
+       FROM user_connected_apps
+       WHERE user_id = ?
+       ORDER BY connected_at DESC`,
       [userId]
     );
-    
+
     if (!rows.length) {
       await pool.query(
         `INSERT INTO user_connected_apps (user_id, app_name, app_slug, status, connected_at, last_used_at)
          VALUES (?, 'VexaStore', 'vexastore', 'connected', NOW(), NOW())`,
         [userId]
       );
-      
+
       const [newRows] = await pool.query(
-        'SELECT app_name, app_slug, status, connected_at, last_used_at FROM user_connected_apps WHERE user_id = ? ORDER BY connected_at DESC',
+        `SELECT app_name, app_slug, status, connected_at, last_used_at
+         FROM user_connected_apps
+         WHERE user_id = ?
+         ORDER BY connected_at DESC`,
         [userId]
       );
-      
+
       return res.json({ success: true, data: newRows });
     }
-    
+
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Connect App
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/connect-app', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { app_name, app_slug } = req.body;
-    
+
     if (!app_name || !app_slug) {
       return res.status(400).json({ success: false, message: 'App name and slug required' });
     }
-    
+
     await pool.query(
       `INSERT INTO user_connected_apps (user_id, app_name, app_slug, status, connected_at, last_used_at)
        VALUES (?, ?, ?, 'connected', NOW(), NOW())
        ON DUPLICATE KEY UPDATE status = 'connected', last_used_at = NOW()`,
       [userId, app_name, app_slug]
     );
-    
+
     res.json({ success: true, message: `App "${app_name}" connected successfully` });
   } catch (error) {
     next(error);
   }
 });
 
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 // POST: Disconnect App
-// ============================================================
+// ──────────────────────────────────────────────────────────────
 router.post('/disconnect-app', authUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { app_slug } = req.body;
-    
+
     if (!app_slug) {
       return res.status(400).json({ success: false, message: 'App slug required' });
     }
-    
+
     await pool.query(
       'UPDATE user_connected_apps SET status = "disconnected", updated_at = NOW() WHERE user_id = ? AND app_slug = ?',
       [userId, app_slug]
     );
-    
+
     res.json({ success: true, message: 'App disconnected successfully' });
   } catch (error) {
     next(error);
