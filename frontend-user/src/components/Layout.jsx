@@ -1,7 +1,9 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, Menu, X, Download, Smartphone, Phone, Monitor, Laptop, Terminal,
-  Home, User, LogIn, Settings, Heart, Clock, Zap, ChevronDown
+  Home, User, LogIn, Settings, Heart, Clock, Zap, ChevronDown,
+  ChevronRight, Shield, Activity, Database, Trash2, LogOut,
+  Edit2, AppWindow, Layers, Wifi, FileText
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -12,6 +14,7 @@ export default function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const checkAuth = () => {
     const token = localStorage.getItem('vexastore_user_token') ||
@@ -72,6 +75,180 @@ export default function Layout() {
     { slug: 'linux', label: 'Linux', icon: Terminal, color: 'text-amber-400' },
   ];
 
+  // ─── User Avatar ───
+  const UserAvatar = ({ user, size = 'md' }) => {
+    const sizeClass = size === 'lg' ? 'w-16 h-16 text-2xl' : 'w-12 h-12 text-lg';
+    const name = user?.name || 'U';
+    const avatarUrl = user?.avatar_url;
+
+    if (avatarUrl) {
+      return (
+        <img
+          src={avatarUrl}
+          alt={name}
+          className={`rounded-full object-cover border-2 border-cyan-500/20 ${sizeClass}`}
+        />
+      );
+    }
+
+    return (
+      <div className={`rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border-2 border-cyan-500/20 ${sizeClass}`}>
+        <span className="font-bold text-cyan-400">{name.charAt(0).toUpperCase()}</span>
+      </div>
+    );
+  };
+
+  // ─── Sidebar Link ───
+  const SidebarLink = ({ to, icon: Icon, label, onClick, isActive, className = '' }) => (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive: active }) => `
+        flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm
+        ${(isActive || active) ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-300 hover:bg-white/5'}
+        ${className}
+      `}
+    >
+      <Icon size={20} className="flex-shrink-0" />
+      <span className="font-medium truncate">{label}</span>
+    </NavLink>
+  );
+
+  // ─── Sidebar Button ───
+  const SidebarButton = ({ icon: Icon, label, onClick, className = '' }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition text-sm ${className}`}
+    >
+      <Icon size={20} className="flex-shrink-0" />
+      <span className="font-medium truncate">{label}</span>
+    </button>
+  );
+
+  // ─── Sidebar Content ───
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* ─── User Profile Section ─── */}
+      <div className="mb-4 pb-4 border-b border-white/5">
+        <NavLink to="/profile" onClick={() => setMobileMenuOpen(false)} className="block">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition">
+            <UserAvatar user={user} size="lg" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-white truncate">{user?.name || 'Guest'}</p>
+              <p className="text-sm text-slate-500 truncate">{user?.email || 'Not signed in'}</p>
+            </div>
+          </div>
+        </NavLink>
+        {isLoggedIn && (
+          <NavLink
+            to="/profile/edit"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 ml-2 mt-1 text-xs text-cyan-400 hover:underline"
+          >
+            <Edit2 size={14} /> Edit Profile
+          </NavLink>
+        )}
+      </div>
+
+      {/* ─── Navigation Links ─── */}
+      <nav className="flex-1 space-y-1 overflow-y-auto">
+        <SidebarLink to="/" icon={Home} label="Home" onClick={() => setMobileMenuOpen(false)} />
+
+        {/* ─── Categories ─── */}
+        <div className="px-4 py-1">
+          <p className="text-[10px] uppercase tracking-wider text-slate-600 font-medium">Categories</p>
+        </div>
+        {categories.map((cat) => (
+          <SidebarLink
+            key={cat.slug}
+            to={`/category/${cat.slug}`}
+            icon={cat.icon}
+            label={cat.label}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        ))}
+
+        <div className="border-t border-white/5 my-2"></div>
+
+        {/* ─── Security ─── */}
+        <SidebarLink to="/settings/2fa" icon={Shield} label="Security" onClick={() => setMobileMenuOpen(false)} />
+
+        {/* ─── Downloads ─── */}
+        <SidebarLink to="/downloads" icon={Download} label="Downloads" onClick={() => setMobileMenuOpen(false)} />
+
+        {/* ─── Favorites ─── */}
+        <SidebarLink to="/favorites" icon={Heart} label="Favorites" onClick={() => setMobileMenuOpen(false)} />
+
+        {/* ─── Settings (Expandable) ─── */}
+        <div>
+          <button
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            className="flex items-center justify-between w-full px-4 py-3 rounded-xl transition text-sm text-slate-300 hover:bg-white/5"
+          >
+            <div className="flex items-center gap-3">
+              <Settings size={20} className="flex-shrink-0" />
+              <span className="font-medium">Settings</span>
+            </div>
+            {settingsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </button>
+
+          {settingsOpen && (
+            <div className="ml-6 space-y-1 border-l border-white/5 pl-3">
+              <SidebarLink
+                to="/settings/apps"
+                icon={Layers}
+                label="Connected Apps"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm"
+              />
+              <SidebarLink
+                to="/settings/devices"
+                icon={Wifi}
+                label="Connected Devices"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm"
+              />
+              <SidebarLink
+                to="/settings/activity"
+                icon={Activity}
+                label="Activity Log"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm"
+              />
+              <SidebarLink
+                to="/settings/export"
+                icon={Database}
+                label="Data Export"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm"
+              />
+              <SidebarLink
+                to="/settings/delete"
+                icon={Trash2}
+                label="Delete Account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm text-red-400 hover:bg-red-500/10"
+              />
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* ─── Logout Button (Bottom) ─── */}
+      {isLoggedIn && (
+        <div className="border-t border-white/5 pt-3 mt-auto">
+          <SidebarButton
+            icon={LogOut}
+            label="Logout"
+            onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+            className="text-red-400 hover:bg-red-500/10"
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // ─── Main Render ───
   return (
     <div className="min-h-screen bg-[#050812] text-white">
       {/* ─── Top Bar ─── */}
@@ -95,12 +272,12 @@ export default function Layout() {
             </button>
 
             {isLoggedIn ? (
-              <NavLink
-                to="/profile"
-                className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition"
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition"
               >
-                <User size={20} />
-              </NavLink>
+                <UserAvatar user={user} size="md" />
+              </button>
             ) : (
               <NavLink
                 to="/login"
@@ -112,7 +289,7 @@ export default function Layout() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition lg:hidden"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -154,101 +331,64 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* ─── Mobile Navigation Drawer ─── */}
+      {/* ─── Mobile Sidebar Drawer ─── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}>
           <div
-            className="w-[280px] h-full bg-[#0a0e1a] p-5 shadow-2xl border-r border-white/5 overflow-y-auto"
+            className="w-[300px] h-full bg-[#0a0e1a] p-5 shadow-2xl border-r border-white/5 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {isLoggedIn && user ? (
-              <div className="mb-5 pb-4 border-b border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/30 to-emerald-500/30 flex items-center justify-center border border-cyan-500/20">
-                    <span className="text-lg font-bold text-cyan-400">
-                      {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white truncate">{user.name}</p>
-                    <p className="text-sm text-slate-500 truncate">{user.email}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mb-5 pb-4 border-b border-white/5">
-                <p className="text-sm text-slate-400 mb-3">Sign in to access your downloads</p>
-                <div className="flex gap-2">
-                  <NavLink to="/login" className="flex-1 btn-primary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
-                    Sign In
-                  </NavLink>
-                  <NavLink to="/register" className="flex-1 btn-secondary text-center text-sm py-2" onClick={() => setMobileMenuOpen(false)}>
-                    Register
-                  </NavLink>
-                </div>
-              </div>
-            )}
-
-            <nav className="space-y-1">
-              <NavLink to="/" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
-                <Home size={20} /> Home
-              </NavLink>
-              {categories.map((cat) => (
-                <NavLink key={cat.slug} to={`/category/${cat.slug}`} className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-300 hover:bg-white/5'}`} onClick={() => setMobileMenuOpen(false)}>
-                  <cat.icon size={20} className={cat.color} /> {cat.label}
-                </NavLink>
-              ))}
-              {isLoggedIn && (
-                <>
-                  <NavLink to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                    <User size={20} /> Profile
-                  </NavLink>
-                  <NavLink to="/downloads" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                    <Download size={20} /> My Downloads
-                  </NavLink>
-                  <NavLink to="/favorites" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/5 transition" onClick={() => setMobileMenuOpen(false)}>
-                    <Heart size={20} /> Favorites
-                  </NavLink>
-                  <button
-                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-left"
-                  >
-                    <LogIn size={20} /> Logout
-                  </button>
-                </>
-              )}
-            </nav>
-
-            <div className="absolute bottom-6 left-6 right-6 border-t border-white/5 pt-4">
-              <p className="text-[10px] text-slate-600 text-center">VexaTrade Blockchain Ecosystem</p>
-            </div>
+            <SidebarContent />
           </div>
         </div>
       )}
 
-      {/* ─── Main Content ─── */}
-      <main className="max-w-7xl mx-auto px-4 py-4">
-        <Outlet />
-      </main>
+      {/* ─── Desktop Sidebar (Hidden on mobile) ─── */}
+      <div className="hidden lg:flex gap-6 max-w-7xl mx-auto px-4 py-4">
+        <aside className="w-[280px] flex-shrink-0 sticky top-20 h-[calc(100vh-100px)] overflow-y-auto">
+          <div className="glass-card p-4 h-full">
+            <SidebarContent />
+          </div>
+        </aside>
 
-      {/* ─── Bottom Navigation ─── */}
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* ─── Mobile Main Content ─── */}
+      <div className="lg:hidden">
+        <main className="max-w-7xl mx-auto px-4 py-4">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* ─── Mobile Bottom Navigation ─── */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0a0e1a]/95 backdrop-blur-xl border-t border-white/5 md:hidden safe-bottom">
-        <div className="flex items-center justify-around py-2">
-          <NavLink to="/" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-            <Home size={22} />
-            <span className="text-[10px] font-medium">Home</span>
+        <div className="flex items-center justify-around py-1">
+          <NavLink to="/" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Home size={20} />
+            <span className="text-[9px] font-medium">Home</span>
           </NavLink>
-          <NavLink to="/search" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-            <Search size={22} />
-            <span className="text-[10px] font-medium">Search</span>
+          <NavLink to="/search" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <AppWindow size={20} />
+            <span className="text-[9px] font-medium">Apps</span>
           </NavLink>
-          <NavLink to="/downloads" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-            <Download size={22} />
-            <span className="text-[10px] font-medium">Downloads</span>
+          <NavLink to="/category/ios" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Menu size={20} />
+            <span className="text-[9px] font-medium">Category</span>
           </NavLink>
-          <NavLink to={isLoggedIn ? "/profile" : "/login"} className={({ isActive }) => `flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-            <User size={22} />
-            <span className="text-[10px] font-medium">{isLoggedIn ? 'Profile' : 'Login'}</span>
+          <NavLink to="/favorites" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Heart size={20} />
+            <span className="text-[9px] font-medium">Favorites</span>
+          </NavLink>
+          <NavLink to="/downloads" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Download size={20} />
+            <span className="text-[9px] font-medium">Downloads</span>
+          </NavLink>
+          <NavLink to="/search" className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+            <Search size={20} />
+            <span className="text-[9px] font-medium">Search</span>
           </NavLink>
         </div>
       </nav>
