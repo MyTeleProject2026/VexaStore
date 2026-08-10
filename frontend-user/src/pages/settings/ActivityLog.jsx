@@ -20,6 +20,8 @@ export default function ActivityLog() {
     );
   };
 
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+
   useEffect(() => {
     loadActivities();
   }, []);
@@ -33,8 +35,7 @@ export default function ActivityLog() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/activity-log`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/activity-log`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -42,12 +43,7 @@ export default function ActivityLog() {
       if (data.success) {
         setActivities(data.data || []);
       } else {
-        // Fallback: mock activities
-        setActivities([
-          { action: 'Logged in', ip_address: '192.168.1.1', created_at: new Date().toISOString() },
-          { action: 'Viewed profile', ip_address: '192.168.1.1', created_at: new Date(Date.now() - 3600000).toISOString() },
-          { action: 'Downloaded app', ip_address: '192.168.1.1', created_at: new Date(Date.now() - 7200000).toISOString() },
-        ]);
+        setActivities([]);
       }
     } catch (err) {
       console.error('Load activities error:', err);
@@ -95,7 +91,6 @@ export default function ActivityLog() {
         <p className="text-slate-400">Recent activity on your account</p>
       </div>
 
-      {/* ─── Filters ─── */}
       <div className="flex flex-wrap gap-2">
         {['all', 'login', 'download', 'update', 'security'].map((f) => (
           <button
@@ -118,7 +113,6 @@ export default function ActivityLog() {
         </button>
       </div>
 
-      {/* ─── Activity List ─── */}
       <div className="space-y-2">
         {filteredActivities.length > 0 ? (
           filteredActivities.map((activity, index) => (
@@ -133,12 +127,6 @@ export default function ActivityLog() {
                     <Clock size={12} />
                     {new Date(activity.created_at).toLocaleString()}
                   </span>
-                  {activity.user_agent && (
-                    <>
-                      <span>•</span>
-                      <span className="truncate max-w-[200px]">{activity.user_agent}</span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
@@ -151,12 +139,6 @@ export default function ActivityLog() {
           </div>
         )}
       </div>
-
-      {filteredActivities.length > 0 && (
-        <div className="text-xs text-slate-500 text-center">
-          Showing {filteredActivities.length} activities
-        </div>
-      )}
     </div>
   );
 }
