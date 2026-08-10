@@ -25,6 +25,8 @@ export default function TwoFactorAuth() {
     );
   };
 
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+
   useEffect(() => {
     load2FAStatus();
   }, []);
@@ -33,10 +35,12 @@ export default function TwoFactorAuth() {
     try {
       setLoading(true);
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -60,8 +64,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/twofa/generate`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,8 +103,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/twofa/verify-enable`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/verify-enable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,8 +143,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/twofa/disable`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/disable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,7 +205,6 @@ export default function TwoFactorAuth() {
       </div>
 
       {enabled ? (
-        // ─── 2FA Enabled ───
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
             <Check size={20} className="text-emerald-400" />
@@ -213,25 +213,11 @@ export default function TwoFactorAuth() {
               <p className="text-sm text-slate-400">Your account is protected by two-factor authentication.</p>
             </div>
           </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={disable2FA}
-              disabled={loading}
-              className="btn-danger flex-1"
-            >
-              {loading ? 'Disabling...' : 'Disable 2FA'}
-            </button>
-          </div>
-
-          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-            <p className="text-sm text-amber-400">
-              ⚠️ Disabling 2FA will remove the extra security layer from your account.
-            </p>
-          </div>
+          <button onClick={disable2FA} disabled={loading} className="btn-danger w-full">
+            {loading ? 'Disabling...' : 'Disable 2FA'}
+          </button>
         </div>
       ) : secret ? (
-        // ─── 2FA Setup ───
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Set Up 2FA</h2>
 
@@ -301,7 +287,6 @@ export default function TwoFactorAuth() {
           </div>
         </div>
       ) : (
-        // ─── 2FA Disabled ───
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-500/10 border border-slate-500/20">
             <Shield size={20} className="text-slate-400" />
@@ -310,33 +295,22 @@ export default function TwoFactorAuth() {
               <p className="text-sm text-slate-400">Enable 2FA to secure your account.</p>
             </div>
           </div>
-
-          <button
-            onClick={generate2FA}
-            disabled={loading}
-            className="btn-primary flex items-center justify-center gap-2"
-          >
+          <button onClick={generate2FA} disabled={loading} className="btn-primary flex items-center justify-center gap-2">
             <Key size={18} /> {loading ? 'Loading...' : 'Set Up 2FA'}
           </button>
         </div>
       )}
 
-      {/* ─── Backup Codes ─── */}
       {showBackupCodes && backupCodes.length > 0 && (
         <div className="glass-card p-6 space-y-4 border-emerald-500/30">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Backup Codes</h3>
-            <button
-              onClick={copyBackupCodes}
-              className="text-cyan-400 hover:underline text-sm flex items-center gap-1"
-            >
+            <button onClick={copyBackupCodes} className="text-cyan-400 hover:underline text-sm flex items-center gap-1">
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? 'Copied!' : 'Copy All'}
             </button>
           </div>
-          <p className="text-sm text-amber-400">
-            ⚠️ Store these backup codes in a safe place. Each code can only be used once.
-          </p>
+          <p className="text-sm text-amber-400">⚠️ Store these backup codes in a safe place. Each code can only be used once.</p>
           <div className="grid grid-cols-2 gap-2 p-4 rounded-xl bg-[#050812] border border-white/5">
             {backupCodes.map((code, index) => (
               <div key={index} className="font-mono text-sm text-cyan-300 bg-white/5 p-2 rounded-lg text-center">
@@ -344,10 +318,7 @@ export default function TwoFactorAuth() {
               </div>
             ))}
           </div>
-          <button
-            onClick={() => setShowBackupCodes(false)}
-            className="text-slate-400 hover:text-white text-sm"
-          >
+          <button onClick={() => setShowBackupCodes(false)} className="text-slate-400 hover:text-white text-sm">
             I've saved my backup codes
           </button>
         </div>
