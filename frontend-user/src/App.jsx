@@ -7,7 +7,7 @@ import Layout from './components/Layout';
 import MaintenancePage from './components/MaintenancePage';
 import LoadingSpinner from './components/LoadingSpinner';
 
-// Lazy load pages for better performance
+// Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const AppPage = lazy(() => import('./pages/AppPage'));
@@ -82,15 +82,18 @@ function AppContent() {
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<EditProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
+
+          {/* ─── Settings Routes ─── */}
+          <Route path="settings" element={<Settings />} />
           <Route path="settings/2fa" element={<TwoFactorAuth />} />
           <Route path="settings/devices" element={<ConnectedDevices />} />
           <Route path="settings/export" element={<DataExport />} />
           <Route path="settings/delete" element={<DeleteAccount />} />
           <Route path="settings/activity" element={<ActivityLog />} />
           <Route path="settings/apps" element={<ConnectedApps />} />
+
           <Route path="downloads" element={<Downloads />} />
           <Route path="favorites" element={<Favorites />} />
-          <Route path="settings" element={<Settings />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
