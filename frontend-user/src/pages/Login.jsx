@@ -36,6 +36,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+  // ✅ Only initialize Google login if client_id is available
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -54,11 +57,12 @@ export default function Login() {
 
         window.location.href = `${vexaAccountUrl}/api/auth/google?redirect_uri=${redirectUri}`;
       } catch (err) {
-        const msg = err.response?.data?.message || err.message || 'Google login failed';
-        showError(`❌ ${msg}`);
+        showError(err.message || 'Google login failed');
       }
     },
-    onError: () => showError('❌ Google login failed'),
+    onError: () => showError('Google login failed'),
+    // ✅ Only enable if client_id exists
+    enabled: !!GOOGLE_CLIENT_ID,
   });
 
   const handleSubmit = async (e) => {
@@ -190,23 +194,31 @@ export default function Login() {
         </p>
 
         {/* ─── Google OAuth ─── */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-          <div className="relative flex justify-center text-xs text-slate-500"><span className="bg-dark-bg px-2">OR</span></div>
-        </div>
+        {GOOGLE_CLIENT_ID ? (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+              <div className="relative flex justify-center text-xs text-slate-500"><span className="bg-dark-bg px-2">OR</span></div>
+            </div>
 
-        <button
-          onClick={googleLogin}
-          className="btn-secondary w-full flex items-center justify-center gap-2 py-2"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-            <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
-            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
-          </svg>
-          Continue with Google
-        </button>
+            <button
+              onClick={googleLogin}
+              className="btn-secondary w-full flex items-center justify-center gap-2 py-2"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+              </svg>
+              Continue with Google
+            </button>
+          </>
+        ) : (
+          <div className="text-center text-xs text-amber-400 mt-4 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            Google login is not configured. Please use VexaAccount or manual login.
+          </div>
+        )}
       </div>
     </div>
   );
