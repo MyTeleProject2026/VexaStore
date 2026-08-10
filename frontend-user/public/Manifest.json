@@ -1,0 +1,24 @@
+{
+  "name": "VexaStore",
+  "short_name": "VexaStore",
+  "description": "App Hub of VexaTrade Ecosystem",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050812",
+  "theme_color": "#22d3ee",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vexastore-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vexastore-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
