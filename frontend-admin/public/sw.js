@@ -1,6 +1,7 @@
 const CACHE_NAME = 'vexastore-admin-v1';
 const OFFLINE_URL = '/offline.html';
 
+// Assets to cache on install
 const urlsToCache = [
   '/',
   '/index.html',
@@ -36,14 +37,23 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Fetch event – serve from cache, fallback to network, then offline page
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        const cloned = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));
+        // Cache valid responses
+        if (response && response.status === 200) {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, cloned);
+          });
+        }
         return response;
       })
-      .catch(() => caches.match(event.request) || caches.match(OFFLINE_URL))
+      .catch(() => {
+        // Network failed – return cached offline page
+        return caches.match(OFFLINE_URL);
+      })
   );
 });
