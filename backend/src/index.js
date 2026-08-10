@@ -52,7 +52,7 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:3000',
   'https://vexastore.onrender.com',
-  'https://vexastore.2bd.net',           // ✅ Fixed - removed extra quote
+  'https://vexastore.2bd.net',
   'https://www.vexastore.2bd.net',
   'https://vexastore-admin.onrender.com',
   'https://admin-vexatrade-manage.onrender.com',
