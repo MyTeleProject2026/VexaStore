@@ -19,6 +19,8 @@ export default function DataExport() {
     );
   };
 
+  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+
   const handleExport = async () => {
     try {
       setLoading(true);
@@ -28,8 +30,7 @@ export default function DataExport() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/export-data`, {
+      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/export-data`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -37,7 +38,6 @@ export default function DataExport() {
       if (data.success) {
         const exportData = data.data;
 
-        // Format data based on selected format
         let content;
         let filename;
         let mimeType;
@@ -47,7 +47,6 @@ export default function DataExport() {
           filename = `vexastore-export-${new Date().toISOString().split('T')[0]}.json`;
           mimeType = 'application/json';
         } else if (exportFormat === 'csv') {
-          // Simple CSV export
           const user = exportData.user || {};
           const rows = [
             ['Field', 'Value'],
@@ -67,7 +66,6 @@ export default function DataExport() {
           filename = `vexastore-export-${new Date().toISOString().split('T')[0]}.csv`;
           mimeType = 'text/csv';
         } else {
-          // Text format
           const user = exportData.user || {};
           const lines = [
             '=== VEXASTORE DATA EXPORT ===',
@@ -91,7 +89,6 @@ export default function DataExport() {
           mimeType = 'text/plain';
         }
 
-        // Download the file
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -132,9 +129,7 @@ export default function DataExport() {
           <div className="flex items-start gap-3">
             <Shield size={18} className="text-cyan-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-slate-400">
-                Your data export includes:
-              </p>
+              <p className="text-sm text-slate-400">Your data export includes:</p>
               <ul className="text-sm text-slate-400 list-disc list-inside mt-2 space-y-1">
                 <li>Profile information (name, email, phone, bio)</li>
                 <li>Account status and verification</li>
@@ -169,16 +164,8 @@ export default function DataExport() {
           </div>
         </div>
 
-        <button
-          onClick={handleExport}
-          disabled={loading}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3"
-        >
-          {loading ? (
-            <span className="spinner-small" />
-          ) : (
-            <Download size={18} />
-          )}
+        <button onClick={handleExport} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+          {loading ? <span className="spinner-small" /> : <Download size={18} />}
           {loading ? 'Generating...' : `Export as ${exportFormat.toUpperCase()}`}
         </button>
 
