@@ -9,6 +9,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
+import NewsPage from './pages/NewsPage';
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const AppPage = lazy(() => import('./pages/AppPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -72,6 +73,8 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
+          <Route path="news" element={<NewsPage />} />
+          <Route path="news/:slug" element={<NewsPage />} />
           <Route path="category/:slug" element={<CategoryPage />} />
           <Route path="app/:slug" element={<AppPage />} />
           <Route path="search" element={<SearchPage />} />
