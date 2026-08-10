@@ -1,7 +1,11 @@
+// backend/src/routes/categories.js
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/database');
 
+// ──────────────────────────────────────────────────────────────
+// GET: List all categories (public)
+// ──────────────────────────────────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -16,6 +20,9 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────
+// GET: Single category by slug (public)
+// ──────────────────────────────────────────────────────────────
 router.get('/:slug', async (req, res, next) => {
   try {
     const { slug } = req.params;
@@ -32,6 +39,9 @@ router.get('/:slug', async (req, res, next) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────
+// GET: Apps in a category (public)
+// ──────────────────────────────────────────────────────────────
 router.get('/:slug/apps', async (req, res, next) => {
   try {
     const { slug } = req.params;
@@ -39,7 +49,7 @@ router.get('/:slug/apps', async (req, res, next) => {
 
     const [rows] = await pool.query(
       `SELECT a.*,
-        (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 LIMIT 1) as latest_version
+        (SELECT version FROM app_versions WHERE app_id = a.id AND is_latest = 1 AND is_active = 1 LIMIT 1) as latest_version
        FROM apps a
        JOIN categories c ON c.id = a.category_id
        WHERE c.slug = ? AND a.is_active = 1
@@ -48,7 +58,23 @@ router.get('/:slug/apps', async (req, res, next) => {
       [slug, Number(limit), Number(offset)]
     );
 
-    res.json({ success: true, data: rows });
+    const [countRows] = await pool.query(
+      `SELECT COUNT(*) as total
+       FROM apps a
+       JOIN categories c ON c.id = a.category_id
+       WHERE c.slug = ? AND a.is_active = 1`,
+      [slug]
+    );
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: countRows[0]?.total || 0,
+        limit: Number(limit),
+        offset: Number(offset)
+      }
+    });
   } catch (error) {
     next(error);
   }
