@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vexastore-backend.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 const getToken = () => localStorage.getItem('vexastore_admin_token');
 
 export const adminApi = axios.create({ baseURL: API_BASE_URL, timeout: 30000, headers: { 'Content-Type': 'application/json' } });
@@ -16,12 +16,10 @@ export const api = {
   createApp: (data) => data instanceof FormData ? adminApi.post('/api/admin/apps', data, { headers: { 'Content-Type': 'multipart/form-data' } }) : adminApi.post('/api/admin/apps', data),
   updateApp: (id, data) => data instanceof FormData ? adminApi.put(`/api/admin/apps/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }) : adminApi.put(`/api/admin/apps/${id}`, data),
   deleteApp: (id) => adminApi.delete(`/api/admin/apps/${id}`),
-
   addVersion: (data) => data instanceof FormData ? adminApi.post('/api/admin/versions', data, { headers: { 'Content-Type': 'multipart/form-data' } }) : adminApi.post('/api/admin/versions', data),
   addReleaseVersion: (data) => adminApi.post('/api/admin/release-versions', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateReleaseVersion: (id, data) => adminApi.put(`/api/admin/release-versions/${id}`, data),
   deleteVersion: (id) => adminApi.delete(`/api/admin/versions/${id}`),
-
   getCategories: () => adminApi.get('/api/categories'),
   getAdminCategories: () => adminApi.get('/api/admin/categories'),
   createCategory: (data) => adminApi.post('/api/admin/categories', data),
