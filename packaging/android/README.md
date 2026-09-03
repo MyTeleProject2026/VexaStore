@@ -30,7 +30,7 @@ The User WebApp's Android `Install` button is connected to the native wrapper. O
 8. Returns to the WebApp after the system installer is opened so the UI can refresh its installed/update state.
 9. Uses the stored Android package name to show `Install`, `Update`, or `Installed` state when the installed version can be queried.
 
-Android intentionally keeps the final **Install/Allow** decision in the Android system UI. A normal third-party app cannot silently install another APK without privileged/device-owner capabilities. Android documents `canRequestPackageInstalls()` and the user-controlled unknown-app-source permission for this flow. citeturn0search0turn0search3
+Android intentionally keeps the final **Install/Allow** decision in the Android system UI. A normal third-party app cannot silently install another APK without privileged/device-owner capabilities.
 
 ## Release metadata
 
