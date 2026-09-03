@@ -1,0 +1,12 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'com.mytele.vexastore.android'; compileSdk 35
+ defaultConfig { minSdk 24; targetSdk 35; versionCode 1; versionName '1.0.0' }
+ flavorDimensions += 'surface'
+ productFlavors {
+  user { dimension 'surface'; applicationId 'com.mytele.vexastore.user'; resValue 'string','app_name','VexaStore'; buildConfigField 'String','WEB_APP_URL','"' + (project.findProperty('userWebAppUrl') ?: 'https://vexastore.onrender.com') + '"' }
+  admin { dimension 'surface'; applicationId 'com.mytele.vexastore.admin'; resValue 'string','app_name','VexaStore Admin'; buildConfigField 'String','WEB_APP_URL','"' + (project.findProperty('adminWebAppUrl') ?: 'https://vexastore-admin.onrender.com') + '"' }
+ }
+ buildTypes { release { minifyEnabled false } }
+ buildFeatures { buildConfig true }
+}
