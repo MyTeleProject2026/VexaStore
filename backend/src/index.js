@@ -18,6 +18,7 @@ const adminRoutes = require('./routes/admin');
 const adminAuthRoutes = require('./routes/adminAuth');
 const maintenanceRoutes = require('./routes/maintenance');
 const settingsRoutes = require('./routes/settings');
+const releaseVersionRoutes = require('./routes/releaseVersions');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,8 +28,8 @@ const uploadDirs = [path.join(__dirname, '../uploads/apps'), path.join(__dirname
 for (const dir of uploadDirs) { if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); console.log(`✅ Created upload directory: ${dir}`); } }
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, crossOriginOpenerPolicy: { policy: 'unsafe-none' } }));
-const allowedOrigins = [process.env.FRONTEND_USER_URL || 'http://localhost:5173', process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'https://vexastore.onrender.com', 'https://vexastore.2bd.net', 'https://www.vexastore.2bd.net', 'https://vexastore-admin.onrender.com', 'https://api-vexaaccount.onrender.com', 'https://api-vexastore.onrender.com'];
-app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') callback(null, true); else { console.warn(`⚠️ CORS blocked: ${origin}`); callback(null, true); } }, credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'X-API-Key'] }));
+const allowedOrigins = [process.env.FRONTEND_USER_URL || 'http://localhost:5173',process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174','http://localhost:5173','http://localhost:5174','http://localhost:3000','https://vexastore.onrender.com','https://vexastore.2bd.net','https://www.vexastore.2bd.net','https://vexastore-admin.onrender.com','https://admin-vexatrade-manage.onrender.com','https://vexatrade-admin-n36m.onrender.com','https://admin.vexatrade-v.2bd.net','https://vexatrade-6nhs.onrender.com','https://www.vexatrade-v.2bd.net','https://learn-vexatrade.onrender.com','https://vexatrade.onrender.com','https://vexatrade-admin.onrender.com','https://api-vexaaccount.onrender.com','https://api-vexastore.onrender.com','https://vexatrade-5ycu.onrender.com','https://vexatrade-ecosystem-api.onrender.com','https://vexatrade-server.onrender.com'];
+app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') callback(null, true); else { console.warn(`⚠️ CORS blocked: ${origin}`); callback(null, true); } }, credentials: true, methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'], allowedHeaders: ['Origin','X-Requested-With','Content-Type','Accept','Authorization','X-API-Key'] }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, message: { success: false, message: 'Too many requests, please try again later.' }, skip: (req) => req.path === '/api/health' || req.path === '/api/admin/login' });
@@ -47,10 +48,11 @@ app.use('/api/auth/vexaaccount', vexaAccountSsoRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/release-versions', releaseVersionRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 
-app.get('/api', (req, res) => res.json({ success: true, message: 'VexaStore API', endpoints: { sso: ['/api/auth/vexaaccount/login', '/api/auth/vexaaccount/start', '/api/auth/vexaaccount/callback', '/api/auth/vexaaccount/config-check'] } }));
+app.get('/api', (req, res) => res.json({ success: true, message: 'VexaStore API', endpoints: { sso: ['/api/auth/vexaaccount/login','/api/auth/vexaaccount/start','/api/auth/vexaaccount/callback','/api/auth/vexaaccount/config-check'], release_management: ['/api/admin/release-versions'] } }));
 app.use((req, res) => res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` }));
 app.use((err, req, res, next) => { console.error('❌ Error:', err.message); console.error('Stack:', err.stack); if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') return res.status(401).json({ success: false, message: err.name === 'TokenExpiredError' ? 'Token expired. Please log in again.' : 'Invalid token. Please log in again.' }); if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Duplicate entry. This record already exists.' }); if (err.code === 'ER_NO_REFERENCED_ROW') return res.status(400).json({ success: false, message: 'Invalid reference. The referenced record does not exist.' }); const status = err.status || 500; res.status(status).json({ success: false, message: err.message || 'Internal server error', ...(process.env.NODE_ENV === 'development' && { stack: err.stack }) }); });
 
