@@ -14,7 +14,7 @@ export default function DownloadButton({ version, appId }) {
   const [installedVersion, setInstalledVersion] = useState('');
   const { showSuccess, showError } = useNotification();
   const nativeAndroid = isNativeAndroid() && version.os === 'android';
-  const fileUrl = version.file_url || version.file_url;
+  const fileUrl = version.file_url || '';
 
   useEffect(() => {
     if (!nativeAndroid || !version.package_name) return;
@@ -34,9 +34,8 @@ export default function DownloadButton({ version, appId }) {
       else if (detail.status === 'installer_opened') {
         setState('idle');
         showSuccess('Android system installer opened. Complete the installation there.');
-      } else if (detail.status === 'permission_required') {
-        setState('permission');
-      } else if (detail.status === 'error') {
+      } else if (detail.status === 'permission_required') setState('permission');
+      else if (detail.status === 'error') {
         setState('idle');
         showError(detail.message || 'APK installation failed.');
       }
@@ -50,7 +49,6 @@ export default function DownloadButton({ version, appId }) {
       showError('This release does not have a downloadable file.');
       return;
     }
-
     try {
       setState('tracking');
       await appApi.trackDownload({
@@ -58,12 +56,10 @@ export default function DownloadButton({ version, appId }) {
         version_id: version.id,
         os: version.os,
         user_agent: navigator.userAgent,
-        country: 'US',
       });
-
       const absoluteUrl = fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
-
       if (nativeAndroid) {
+        if (typeof window.VexaStoreAndroid.downloadAndInstall !== 'function') throw new Error('Android installer bridge unavailable');
         setState('downloading');
         window.VexaStoreAndroid.downloadAndInstall(
           absoluteUrl,
@@ -74,18 +70,17 @@ export default function DownloadButton({ version, appId }) {
         );
         return;
       }
-
       setState('idle');
       showSuccess(`Downloading ${version.os} version...`);
       window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setState('idle');
-      showError('Download failed. Please try again.');
+      showError(err?.message || 'Download failed. Please try again.');
     }
   };
 
   const osLabels = { ios: 'iOS', android: 'Android', windows: 'Windows', macos: 'macOS', linux: 'Linux' };
-  const isInstalled = nativeAndroid && installedVersion;
+  const isInstalled = nativeAndroid && Boolean(installedVersion);
   const isCurrent = isInstalled && installedVersion === version.version;
   const isBusy = ['tracking', 'downloading', 'verifying', 'permission'].includes(state);
 
@@ -94,20 +89,11 @@ export default function DownloadButton({ version, appId }) {
       <div className="min-w-0">
         <p className="text-sm font-medium text-white">{osLabels[version.os] || version.os} {version.version}</p>
         <p className="text-xs text-text-secondary">Size: {version.file_size || 'N/A'} • Updated: {new Date(version.created_at).toLocaleDateString()}</p>
-        {nativeAndroid && version.package_name && (
-          <p className="text-[11px] text-text-secondary mt-1 truncate">Package: {version.package_name}</p>
-        )}
-        {isInstalled && (
-          <p className="text-[11px] text-emerald-300 mt-1">Installed: {installedVersion}{isCurrent ? ' • Up to date' : ' • Update available'}</p>
-        )}
+        {nativeAndroid && version.package_name && <p className="text-[11px] text-text-secondary mt-1 truncate">Package: {version.package_name}</p>}
+        {isInstalled && <p className="text-[11px] text-emerald-300 mt-1">Installed: {installedVersion}{isCurrent ? ' • Up to date' : ' • Update available'}</p>}
         {version.release_notes && <p className="text-xs text-text-secondary mt-1">{version.release_notes}</p>}
       </div>
-
-      <button
-        onClick={handleDownload}
-        disabled={isBusy}
-        className={`btn-primary flex items-center gap-2 text-sm px-4 py-2 ${isBusy ? 'opacity-70 cursor-not-allowed' : ''}`}
-      >
+      <button onClick={handleDownload} disabled={isBusy} className={`btn-primary flex items-center gap-2 text-sm px-4 py-2 ${isBusy ? 'opacity-70 cursor-not-allowed' : ''}`}>
         {state === 'tracking' ? <><RefreshCw size={16} className="animate-spin" /> Preparing...</>
           : state === 'downloading' ? <><Download size={16} className="animate-pulse" /> Downloading...</>
           : state === 'verifying' ? <><ShieldCheck size={16} /> Verifying...</>
