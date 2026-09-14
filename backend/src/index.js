@@ -32,6 +32,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, crossOri
 const allowedOrigins = new Set([
   process.env.FRONTEND_USER_URL || 'http://localhost:5173',
   process.env.FRONTEND_ADMIN_URL || 'http://localhost:5174',
+  process.env.MTP2026_FRONTEND_URL || 'https://mtp2026-app-launcher.onrender.com',
   'http://localhost:5173','http://localhost:5174','http://localhost:3000',
   'https://vexastore.onrender.com','https://vexastore.2bd.net','https://www.vexastore.2bd.net',
   'https://vexastore-admin.onrender.com','https://admin-vexatrade-manage.onrender.com',
