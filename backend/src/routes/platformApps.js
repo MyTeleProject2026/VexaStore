@@ -44,7 +44,7 @@ function platformManifest(app, versions) {
   const mtp2026InstallUrl = `${MTP2026_ORIGIN}/?vexastoreInstall=1&slug=${encodeURIComponent(app.slug)}`;
   const storeAppUrl = `${VEXASTORE_ORIGIN}/app/${encodeURIComponent(app.slug)}`;
   return {
-    schema: 'vexastore-install-manifest-v3',
+    schema: 'vexastore-install-manifest-v4',
     app: { id: app.id, name: app.name, slug: app.slug, description: app.description, iconUrl: app.icon_url, website: app.website, developer: app.developer },
     webApp: web ? {
       url: web.file_url || app.website,
@@ -53,11 +53,18 @@ function platformManifest(app, versions) {
       versionId: web.id,
       version: web.version,
       installable: true,
+      applicationType: 'webapp',
       installMode: 'mtp2026-webapp-registry',
       pwaMode: 'browser-controlled',
       automaticInstallInsideMtp2026: true,
       automaticInstallOnPhysicalDevice: false,
       mtp2026InstallUrl,
+      supportedPhysicalInstallModes: {
+        android: 'browser-pwa-or-published-apk',
+        ios: 'browser-pwa-or-apple-authorized-distribution',
+        windows: 'browser-pwa-or-published-windows-package',
+        gaming: 'browser-pwa-or-compatible-native-package',
+      },
     } : null,
     nativePackages,
     supportedMtp2026Modes: ['mtp2026', 'ios', 'android', 'windows11', 'gaming'],
@@ -75,6 +82,13 @@ function platformManifest(app, versions) {
       manifestUrl: `${VEXASTORE_ORIGIN}/api/platform/apps/${encodeURIComponent(app.slug)}/install-manifest`,
       storeUrl: storeAppUrl,
       requiresAuthenticatedMTP2026Session: true,
+      registrationScope: 'all-mtp2026-guest-profiles',
+    },
+    security: {
+      transport: 'https-only',
+      nativePackageIntegrity: 'sha256-when-published',
+      nativeSigning: 'platform-authorized',
+      browserInstallRequiresUserGesture: true,
     },
     policy: {
       mtp2026: 'HTTPS WebApps are registered immediately in the authenticated MTP2026 application registry and become launchable from every MTP2026 guest profile on that account.',
