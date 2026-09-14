@@ -2,7 +2,12 @@ import { useState } from 'react';
 import api, { getApiErrorMessage } from '../services/api';
 
 const initialForm = { name: '', slug: '', description: '', web_url: '', version: '1.0.0', developer: 'MTP2026', website: '', icon_url: '' };
-const GUEST_TARGETS = ['mtp2026', 'android', 'ios', 'windows11', 'gaming'];
+const GUEST_TARGETS = [
+  ['mtp2026', 'MTP2026 Device OS'],
+  ['android', 'MTP2026 Android OS'],
+  ['windows11', 'MTP2026 Desktop OS'],
+  ['gaming', 'MTP2026 Gaming OS'],
+];
 
 export default function PlatformPublish() {
   const [form, setForm] = useState(initialForm);
@@ -30,7 +35,7 @@ export default function PlatformPublish() {
     <div className="p-4 md:p-6 space-y-5">
       <div>
         <h1 className="text-xl font-bold">Platform App Publishing</h1>
-        <p className="text-sm opacity-70 mt-1">Publish a complete HTTPS WebApp entry for VexaStore. MTP2026 can register it as a native launcher application while physical devices use their platform PWA/native installation mechanisms.</p>
+        <p className="text-sm opacity-70 mt-1">Publish an HTTPS WebApp once. VexaStore creates the signed installation contract used by MTP2026 and by normal device/browser installation flows.</p>
       </div>
       <form onSubmit={submit} className="max-w-2xl space-y-4 rounded-2xl border border-white/10 p-4 bg-black/10">
         {[
@@ -50,8 +55,8 @@ export default function PlatformPublish() {
         <label className="block space-y-1"><span className="text-sm font-medium">Description</span><textarea value={form.description} onChange={update('description')} rows={4} className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 outline-none" /></label>
         <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3">
           <b className="text-sm">MTP2026 guest targets</b>
-          <p className="text-xs opacity-70 mt-1">Every published HTTPS WebApp is available to the MTP2026 application registry in all four MTP2026 guest profiles.</p>
-          <div className="flex flex-wrap gap-2 mt-2">{GUEST_TARGETS.map(target => <span key={target} className="px-2 py-1 rounded-lg bg-black/20 border border-white/10 text-[11px]">{target}</span>)}</div>
+          <p className="text-xs opacity-70 mt-1">Every published HTTPS WebApp is registered for all four MTP2026-owned guest profiles. The same VexaAccount application library follows the user between profiles.</p>
+          <div className="flex flex-wrap gap-2 mt-2">{GUEST_TARGETS.map(([id, label]) => <span key={id} className="px-2 py-1 rounded-lg bg-black/20 border border-white/10 text-[11px]">{label}</span>)}</div>
         </div>
         <button disabled={busy} className="rounded-xl px-4 py-2 bg-cyan-500 text-black font-semibold disabled:opacity-50">{busy ? 'Publishing…' : 'Publish Web App'}</button>
         {message && <p className="text-sm opacity-80">{message}</p>}
@@ -61,17 +66,18 @@ export default function PlatformPublish() {
         <b>Installation contract created</b>
         <p className="opacity-80">VexaStore manifest: <code>{published.installManifestPath}</code></p>
         <p className="opacity-80">MTP2026 direct install: <code>{published.mtp2026InstallUrl}</code></p>
-        <p className="opacity-80">Supported MTP2026 profiles: {(published.supportedMtp2026Modes || GUEST_TARGETS).join(', ')}</p>
+        <p className="opacity-80">Supported profiles: {(published.supportedMtp2026Modes || GUEST_TARGETS.map(([id]) => id)).join(', ')}</p>
+        <a className="inline-flex rounded-lg bg-cyan-500 text-black px-3 py-2 font-semibold" href={published.mtp2026InstallUrl} target="_blank" rel="noreferrer">Open MTP2026 Installer</a>
       </div>}
 
       <div className="max-w-2xl rounded-2xl border border-white/10 p-4 text-sm opacity-80">
         <b>Installation behavior</b>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li><b>MTP2026:</b> HTTPS WebApps are registered after the VexaStore install request is received and become launchable from every MTP2026 guest profile.</li>
-          <li><b>Android:</b> APK releases are downloaded, verified, then handed to Android PackageInstaller; Android may require user confirmation.</li>
-          <li><b>iPhone/iOS:</b> WebApps use the platform PWA flow. Native IPA installation requires Apple's authorized signing/distribution path.</li>
-          <li><b>Windows:</b> WebApps use browser/PWA installation; native installers may require UAC/security approval.</li>
-          <li><b>Gaming OS:</b> WebApps use the MTP2026 registry; native packages require a compatible native runtime.</li>
+          <li><b>MTP2026:</b> HTTPS WebApps are registered after the VexaStore install request and become launchable from all four MTP2026 guest profiles.</li>
+          <li><b>Android APK:</b> VexaStore's native Android bridge downloads, verifies and hands the package to Android PackageInstaller. User/device policy can still require confirmation.</li>
+          <li><b>iPhone/iOS:</b> published WebApps use the browser/PWA installation mechanism. Arbitrary IPA files are not silently installed by a web page.</li>
+          <li><b>Windows:</b> WebApps use browser/PWA installation; native installers remain under Windows security/UAC.</li>
+          <li><b>Gaming OS:</b> WebApps use the MTP2026 application registry; native packages require a compatible native runtime.</li>
         </ul>
       </div>
     </div>
