@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 import DownloadButton from '../components/DownloadButton';
-import { ChevronLeft, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal, Globe2, Download } from 'lucide-react';
+import { ChevronLeft, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal, Globe2, Download, PackageCheck } from 'lucide-react';
 
 const OS_ICONS = {
   ios: Phone,
@@ -14,12 +14,16 @@ const OS_ICONS = {
   web: Globe2,
 };
 
-const MTP2026_ORIGINS = new Set([
-  'https://mtp2026-app-launcher.onrender.com',
-  'https://mtp2026-app-launcher-backend.onrender.com',
-]);
+const MTP2026_ORIGIN = 'https://mtp2026-app-launcher.onrender.com';
 
-function openWebAppFromStore(app, notify) {
+function getMtpInstallUrl(slug) {
+  const url = new URL(MTP2026_ORIGIN);
+  url.searchParams.set('vexastoreInstall', '1');
+  url.searchParams.set('slug', slug);
+  return url.toString();
+}
+
+function openWebAppFromStore(app, slug, notify, installToMtp = false) {
   const target = app?.website || '';
   if (!target) {
     notify('This application has no WebApp URL published yet.');
@@ -38,6 +42,7 @@ function openWebAppFromStore(app, notify) {
     type: 'MTP2026_VEXASTORE_INSTALL',
     app: {
       id: app.id,
+      slug,
       title: app.name,
       description: app.description || app.long_description || '',
       url: url.toString(),
@@ -47,13 +52,24 @@ function openWebAppFromStore(app, notify) {
     },
   };
 
-  try {
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage(payload, 'https://mtp2026-app-launcher.onrender.com');
-      notify('Sent to the MTP2026 App Launcher.');
+  if (installToMtp) {
+    let delivered = false;
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(payload, MTP2026_ORIGIN);
+        delivered = true;
+      }
+    } catch (_) {}
+    if (!delivered) {
+      window.open(getMtpInstallUrl(slug), '_blank', 'noopener,noreferrer');
     }
-  } catch (_) {}
+    notify(delivered ? 'Installation sent to MTP2026.' : 'Opening MTP2026 to complete installation…');
+    return;
+  }
 
+  try {
+    if (window.opener && !window.opener.closed) window.opener.postMessage(payload, MTP2026_ORIGIN);
+  } catch (_) {}
   window.open(url.toString(), '_blank', 'noopener,noreferrer');
 }
 
@@ -108,8 +124,11 @@ export default function AppPage() {
 
       {hasWebApp && <div className="glass-card p-6 border border-accent-primary/20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div><h2 className="text-lg font-semibold text-white flex items-center gap-2"><Globe2 size={19} /> WebApp</h2><p className="text-sm text-text-secondary mt-1">Open the published HTTPS WebApp and use the platform's normal PWA installation flow when supported.</p></div>
-          <button onClick={() => openWebAppFromStore(app, (message) => showSuccess(message))} className="btn-primary flex items-center justify-center gap-2"><Download size={16} /> {mtpInstallMode ? 'Install to MTP2026' : 'Open & Install WebApp'}</button>
+          <div><h2 className="text-lg font-semibold text-white flex items-center gap-2"><Globe2 size={19} /> WebApp</h2><p className="text-sm text-text-secondary mt-1">Published HTTPS WebApp. MTP2026 installs it into its own application registry; supported browsers can install it as a PWA.</p></div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), true)} className="btn-primary flex items-center justify-center gap-2"><PackageCheck size={16} /> {mtpInstallMode ? 'Install to MTP2026' : 'Install to MTP2026'}</button>
+            <button onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), false)} className="btn-primary flex items-center justify-center gap-2"><Download size={16} /> Open WebApp</button>
+          </div>
         </div>
       </div>}
 
