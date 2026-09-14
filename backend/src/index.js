@@ -19,6 +19,7 @@ const adminAuthRoutes = require('./routes/adminAuth');
 const maintenanceRoutes = require('./routes/maintenance');
 const settingsRoutes = require('./routes/settings');
 const releaseVersionRoutes = require('./routes/releaseVersions');
+const platformAppsRoutes = require('./routes/platformApps');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,9 +72,10 @@ app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/release-versions', releaseVersionRoutes);
 app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/platform', platformAppsRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 
-app.get('/api', (req, res) => res.json({ success: true, message: 'VexaStore API', endpoints: { sso: ['/api/auth/vexaaccount/login','/api/auth/vexaaccount/start','/api/auth/vexaaccount/callback','/api/auth/vexaaccount/config-check'], release_management: ['/api/admin/release-versions'] } }));
+app.get('/api', (req, res) => res.json({ success: true, message: 'VexaStore API', endpoints: { sso: ['/api/auth/vexaaccount/login','/api/auth/vexaaccount/start','/api/auth/vexaaccount/callback','/api/auth/vexaaccount/config-check'], release_management: ['/api/admin/release-versions'], platform_install: ['/api/platform/apps/:slug/install-manifest'] } }));
 app.use((req, res) => res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` }));
 app.use((err, req, res, next) => { console.error('❌ Error:', err.message); console.error('Stack:', err.stack); if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') return res.status(401).json({ success: false, message: err.name === 'TokenExpiredError' ? 'Token expired. Please log in again.' : 'Invalid token. Please log in again.' }); if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Duplicate entry. This record already exists.' }); if (err.code === 'ER_NO_REFERENCED_ROW') return res.status(400).json({ success: false, message: 'Invalid reference. The referenced record does not exist.' }); if (err.message === 'CORS origin not allowed') return res.status(403).json({ success: false, message: 'Origin not allowed' }); const status = err.status || 500; res.status(status).json({ success: false, message: err.message || 'Internal server error', ...(process.env.NODE_ENV === 'development' && { stack: err.stack }) }); });
 
