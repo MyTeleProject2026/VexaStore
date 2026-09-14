@@ -26,7 +26,22 @@ jobs:
       - uses: android-actions/setup-android@v4
       - name: Install Android SDK
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+      - name: Detect release signing configuration
+        id: signing
+        shell: bash
+        env:
+          USER_KEYSTORE_BASE64: ${{ secrets.VEXASTORE_USER_KEYSTORE_BASE64 }}
+          ADMIN_KEYSTORE_BASE64: ${{ secrets.VEXASTORE_ADMIN_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$USER_KEYSTORE_BASE64" && -n "$ADMIN_KEYSTORE_BASE64" && -n "$USER_KEYSTORE_PASSWORD" && -n "$ADMIN_KEYSTORE_PASSWORD" && -n "$USER_KEY_ALIAS" && -n "$ADMIN_KEY_ALIAS" && -n "$USER_KEY_PASSWORD" && -n "$ADMIN_KEY_PASSWORD" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured; CI will build debug APKs/AABs instead of failing before compilation."
+          fi
       - name: Restore release keystores
+        if: steps.signing.outputs.available == 'true'
         env:
           USER_KEYSTORE_BASE64: ${{ secrets.VEXASTORE_USER_KEYSTORE_BASE64 }}
           ADMIN_KEYSTORE_BASE64: ${{ secrets.VEXASTORE_ADMIN_KEYSTORE_BASE64 }}
@@ -38,17 +53,26 @@ jobs:
           chmod 600 "$USER_KEYSTORE_PATH" "$ADMIN_KEYSTORE_PATH"
           keytool -list -keystore "$USER_KEYSTORE_PATH" -storepass "$USER_KEYSTORE_PASSWORD" -alias "$USER_KEY_ALIAS" >/dev/null
           keytool -list -keystore "$ADMIN_KEYSTORE_PATH" -storepass "$ADMIN_KEYSTORE_PASSWORD" -alias "$ADMIN_KEY_ALIAS" >/dev/null
-      - name: Build user APK/AAB
+      - name: Build signed user APK/AAB
+        if: steps.signing.outputs.available == 'true'
         working-directory: packaging/android
         run: |
           chmod +x ./gradlew
           ./gradlew assembleUserRelease bundleUserRelease
-      - name: Build admin APK/AAB
+      - name: Build signed admin APK/AAB
+        if: steps.signing.outputs.available == 'true'
         working-directory: packaging/android
         run: |
           chmod +x ./gradlew
           ./gradlew assembleAdminRelease bundleAdminRelease
+      - name: Build unsigned debug packages
+        if: steps.signing.outputs.available != 'true'
+        working-directory: packaging/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleUserDebug assembleAdminDebug
       - name: Verify release binaries
+        if: steps.signing.outputs.available == 'true'
         working-directory: packaging/android
         run: |
           set -euo pipefail
@@ -57,12 +81,23 @@ jobs:
           done
           find app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) -print -exec stat -c '%n %s bytes' {} \;
           while IFS= read -r f; do size=$(stat -c '%s' "$f"); [ "$size" -gt 100000 ] || { echo "Release binary unexpectedly small: $f ($size bytes)" >&2; exit 1; }; done < <(find app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \))
+      - name: Verify debug binaries
+        if: steps.signing.outputs.available != 'true'
+        working-directory: packaging/android
+        run: |
+          set -euo pipefail
+          for pattern in 'app/build/outputs/apk/user/debug/*.apk' 'app/build/outputs/apk/admin/debug/*.apk'; do
+            matches=( $pattern ); [ -e "${matches[0]}" ] || { echo "Missing debug binary: $pattern" >&2; exit 1; }
+          done
+          find app/build/outputs -type f -name '*.apk' -print -exec stat -c '%n %s bytes' {} \;
       - uses: actions/upload-artifact@v7
         with:
-          name: vexastore-android-release
+          name: vexastore-android-${{ steps.signing.outputs.available == 'true' && 'release' || 'debug' }}
           if-no-files-found: error
           path: |
             packaging/android/app/build/outputs/apk/user/release/*.apk
             packaging/android/app/build/outputs/apk/admin/release/*.apk
             packaging/android/app/build/outputs/bundle/userRelease/*.aab
             packaging/android/app/build/outputs/bundle/adminRelease/*.aab
+            packaging/android/app/build/outputs/apk/user/debug/*.apk
+            packaging/android/app/build/outputs/apk/admin/debug/*.apk
