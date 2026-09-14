@@ -1,0 +1,20 @@
+{
+  "schema": "vexastore-mtp2026-install-v1",
+  "storeOrigin": "https://www.vexastore.2bd.net",
+  "consumerOrigin": "https://mtp2026-app-launcher.onrender.com",
+  "webAppProtocol": "MTP2026_VEXASTORE_INSTALL",
+  "supportedProfiles": ["mtp2026", "android", "ios", "windows11", "gaming"],
+  "nativeInstall": {
+    "android": "native-package-installer",
+    "windows11": "native-package-installer",
+    "ios": "pwa-or-native-signed-distribution",
+    "gaming": "native-package-installer",
+    "mtp2026": "mtp2026-webapp-registry"
+  },
+  "security": {
+    "httpsOnly": true,
+    "source": "VexaStore",
+    "verifySha256WhenProvided": true,
+    "neverSilentlyInstallNativePackages": true
+  }
+}
