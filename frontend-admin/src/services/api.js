@@ -20,6 +20,7 @@ export const api = {
   addReleaseVersion: (data) => adminApi.post('/api/admin/release-versions', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateReleaseVersion: (id, data) => adminApi.put(`/api/admin/release-versions/${id}`, data),
   deleteVersion: (id) => adminApi.delete(`/api/admin/versions/${id}`),
+  publishWebApp: (data) => adminApi.post('/api/platform/publish-web', data),
   getCategories: () => adminApi.get('/api/categories'),
   getAdminCategories: () => adminApi.get('/api/admin/categories'),
   createCategory: (data) => adminApi.post('/api/admin/categories', data),
