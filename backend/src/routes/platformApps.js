@@ -7,11 +7,9 @@ const { authAdmin } = require('../middleware/auth');
 const PUBLIC = `(is_active = 1 AND (release_status = 'PUBLISHED' OR release_status IS NULL))`;
 const MTP2026_ORIGIN = 'https://mtp2026-app-launcher.onrender.com';
 const VEXASTORE_ORIGIN = 'https://www.vexastore.2bd.net';
+const MTP2026_PROFILES = Object.freeze(['mtp2026', 'android', 'windows11', 'gaming']);
 
-function normalizeSlug(value) {
-  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
+function normalizeSlug(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 function requireHttps(value, field) {
   let url;
   try { url = new URL(String(value || '').trim()); } catch (_) { throw new Error(`${field}_INVALID_URL`); }
@@ -19,6 +17,9 @@ function requireHttps(value, field) {
   if (url.username || url.password || !url.hostname) throw new Error(`${field}_INVALID_URL`);
   url.hash = '';
   return url.toString();
+}
+function profileInstallUrls(slug) {
+  return Object.fromEntries(MTP2026_PROFILES.map((mode) => [mode, `${MTP2026_ORIGIN}/?vexastoreInstall=1&guestMode=${encodeURIComponent(mode)}&slug=${encodeURIComponent(slug)}`]));
 }
 
 function platformManifest(app, versions) {
@@ -41,10 +42,11 @@ function platformManifest(app, versions) {
       userApprovalRequired: true,
     }]))
   );
-  const mtp2026InstallUrl = `${MTP2026_ORIGIN}/?vexastoreInstall=1&slug=${encodeURIComponent(app.slug)}`;
+  const profileUrls = profileInstallUrls(app.slug);
+  const mtp2026InstallUrl = profileUrls.mtp2026;
   const storeAppUrl = `${VEXASTORE_ORIGIN}/app/${encodeURIComponent(app.slug)}`;
   return {
-    schema: 'vexastore-install-manifest-v4',
+    schema: 'vexastore-install-manifest-v5',
     app: { id: app.id, name: app.name, slug: app.slug, description: app.description, iconUrl: app.icon_url, website: app.website, developer: app.developer },
     webApp: web ? {
       url: web.file_url || app.website,
@@ -59,6 +61,7 @@ function platformManifest(app, versions) {
       automaticInstallInsideMtp2026: true,
       automaticInstallOnPhysicalDevice: false,
       mtp2026InstallUrl,
+      mtp2026ProfileInstallUrls: profileUrls,
       supportedPhysicalInstallModes: {
         android: 'browser-pwa-or-published-apk',
         ios: 'browser-pwa-or-apple-authorized-distribution',
@@ -67,7 +70,7 @@ function platformManifest(app, versions) {
       },
     } : null,
     nativePackages,
-    supportedMtp2026Modes: ['mtp2026', 'ios', 'android', 'windows11', 'gaming'],
+    supportedMtp2026Modes: MTP2026_PROFILES,
     mtp2026GuestProfiles: {
       mtp2026: 'MTP2026 Device OS',
       ios: 'MTP2026 Device OS',
@@ -79,6 +82,7 @@ function platformManifest(app, versions) {
       type: 'MTP2026_VEXASTORE_INSTALL',
       target: 'MTP2026-App-Launcher',
       url: mtp2026InstallUrl,
+      profileUrls,
       manifestUrl: `${VEXASTORE_ORIGIN}/api/platform/apps/${encodeURIComponent(app.slug)}/install-manifest`,
       storeUrl: storeAppUrl,
       requiresAuthenticatedMTP2026Session: true,
@@ -122,7 +126,8 @@ router.post('/publish-web', authAdmin, async (req, res, next) => {
     const [appResult] = await connection.query(`INSERT INTO apps (name, slug, description, long_description, category_id, icon_url, developer, website, is_featured, is_free, price, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 1, NOW(), NOW())`, [name, slug, description || null, description || null, category, icon_url || null, developer || 'MTP2026', normalizedWebsite, Number(is_featured) ? 1 : 0]);
     const [versionResult] = await connection.query(`INSERT INTO app_versions (app_id, version, os, file_url, file_size, release_notes, is_latest, is_active, release_status, created_at, updated_at) VALUES (?, ?, 'web', ?, NULL, ?, 1, 1, 'PUBLISHED', NOW(), NOW())`, [appResult.insertId, version, normalizedWebUrl, 'Published HTTPS WebApp; installable in MTP2026 and through browser PWA flows where supported.']);
     await connection.commit();
-    res.status(201).json({ success: true, message: 'Web app published', data: { appId: appResult.insertId, versionId: versionResult.insertId, slug, installManifestPath: `/api/platform/apps/${slug}/install-manifest`, mtp2026InstallUrl: `${MTP2026_ORIGIN}/?vexastoreInstall=1&slug=${encodeURIComponent(slug)}`, supportedMtp2026Modes: ['mtp2026','ios','android','windows11','gaming'] } });
+    const profileUrls = profileInstallUrls(slug);
+    res.status(201).json({ success: true, message: 'Web app published', data: { appId: appResult.insertId, versionId: versionResult.insertId, slug, installManifestPath: `/api/platform/apps/${slug}/install-manifest`, mtp2026InstallUrl: profileUrls.mtp2026, profileInstallUrls: profileUrls, supportedMtp2026Modes: MTP2026_PROFILES } });
   } catch (error) { try { await connection.rollback(); } catch (_) {} if (String(error?.message || '').includes('_HTTPS_REQUIRED') || String(error?.message || '').includes('_INVALID_URL')) return res.status(400).json({ success: false, message: error.message }); next(error); } finally { connection.release(); }
 });
 
