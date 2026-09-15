@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Download, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, RefreshCw, ShieldCheck, PlusSquare } from 'lucide-react';
 import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 
@@ -9,11 +9,22 @@ function isNativeAndroid() {
   return typeof window !== 'undefined' && Boolean(window.VexaStoreAndroid?.isNativeAndroid?.());
 }
 
+function isWebRelease(version) {
+  return String(version?.os || '').toLowerCase() === 'web';
+}
+
+function isIOSBrowser() {
+  if (typeof navigator === 'undefined') return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent || '') && !window.MSStream;
+}
+
 export default function DownloadButton({ version, appId }) {
   const [state, setState] = useState('idle');
   const [installedVersion, setInstalledVersion] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const { showSuccess, showError } = useNotification();
   const nativeAndroid = isNativeAndroid() && version.os === 'android';
+  const webRelease = isWebRelease(version);
   const fileUrl = version.file_url || '';
 
   useEffect(() => {
@@ -24,6 +35,16 @@ export default function DownloadButton({ version, appId }) {
       console.warn('Unable to query installed Android package', error);
     }
   }, [nativeAndroid, version.package_name, version.version]);
+
+  useEffect(() => {
+    if (!webRelease) return undefined;
+    const handler = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, [webRelease]);
 
   useEffect(() => {
     if (!nativeAndroid) return undefined;
@@ -44,7 +65,45 @@ export default function DownloadButton({ version, appId }) {
     return () => window.removeEventListener('vexastore:android-install', handler);
   }, [nativeAndroid, showError, showSuccess]);
 
+  const absoluteUrl = fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
+
+  const handleWebInstall = async () => {
+    if (!fileUrl) {
+      showError('This WebApp does not have a published HTTPS URL.');
+      return;
+    }
+    try {
+      setState('tracking');
+      await appApi.trackDownload({
+        app_id: appId,
+        version_id: version.id,
+        os: 'web',
+        user_agent: navigator.userAgent,
+      });
+      if (deferredPrompt) {
+        setState('installing');
+        await deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        setDeferredPrompt(null);
+        setState('idle');
+        showSuccess(result?.outcome === 'accepted' ? 'WebApp installed on this device.' : 'WebApp installation cancelled.');
+        return;
+      }
+      setState('idle');
+      if (isIOSBrowser()) {
+        showSuccess('On iPhone/iPad: open the WebApp, tap Share, then “Add to Home Screen”.');
+      } else {
+        showSuccess('Your browser controls WebApp installation. Open the WebApp and use the browser install/add-to-home-screen option.');
+      }
+      window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setState('idle');
+      showError(err?.message || 'WebApp installation failed.');
+    }
+  };
+
   const handleDownload = async () => {
+    if (webRelease) return handleWebInstall();
     if (!fileUrl) {
       showError('This release does not have a downloadable file.');
       return;
@@ -57,7 +116,6 @@ export default function DownloadButton({ version, appId }) {
         os: version.os,
         user_agent: navigator.userAgent,
       });
-      const absoluteUrl = fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
       if (nativeAndroid) {
         if (typeof window.VexaStoreAndroid.downloadAndInstall !== 'function') throw new Error('Android installer bridge unavailable');
         setState('downloading');
@@ -79,10 +137,10 @@ export default function DownloadButton({ version, appId }) {
     }
   };
 
-  const osLabels = { ios: 'iOS', android: 'Android', windows: 'Windows', macos: 'macOS', linux: 'Linux' };
+  const osLabels = { ios: 'iOS', android: 'Android', windows: 'Windows', windows11: 'Windows 11', macos: 'macOS', linux: 'Linux', web: 'WebApp / PWA' };
   const isInstalled = nativeAndroid && Boolean(installedVersion);
   const isCurrent = isInstalled && installedVersion === version.version;
-  const isBusy = ['tracking', 'downloading', 'verifying', 'permission'].includes(state);
+  const isBusy = ['tracking', 'downloading', 'verifying', 'permission', 'installing'].includes(state);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-dark-bg/50 border border-dark-border hover:border-accent-primary/20 transition">
@@ -90,6 +148,7 @@ export default function DownloadButton({ version, appId }) {
         <p className="text-sm font-medium text-white">{osLabels[version.os] || version.os} {version.version}</p>
         <p className="text-xs text-text-secondary">Size: {version.file_size || 'N/A'} • Updated: {new Date(version.created_at).toLocaleDateString()}</p>
         {nativeAndroid && version.package_name && <p className="text-[11px] text-text-secondary mt-1 truncate">Package: {version.package_name}</p>}
+        {webRelease && <p className="text-[11px] text-emerald-300 mt-1">Published HTTPS WebApp • browser-controlled PWA install</p>}
         {isInstalled && <p className="text-[11px] text-emerald-300 mt-1">Installed: {installedVersion}{isCurrent ? ' • Up to date' : ' • Update available'}</p>}
         {version.release_notes && <p className="text-xs text-text-secondary mt-1">{version.release_notes}</p>}
       </div>
@@ -97,10 +156,11 @@ export default function DownloadButton({ version, appId }) {
         {state === 'tracking' ? <><RefreshCw size={16} className="animate-spin" /> Preparing...</>
           : state === 'downloading' ? <><Download size={16} className="animate-pulse" /> Downloading...</>
           : state === 'verifying' ? <><ShieldCheck size={16} /> Verifying...</>
+          : state === 'installing' ? <><PlusSquare size={16} className="animate-pulse" /> Installing...</>
           : state === 'permission' ? <><ExternalLink size={16} /> Allow install...</>
           : isCurrent ? <><CheckCircle2 size={16} /> Installed</>
           : isInstalled ? <><Download size={16} /> Update</>
-          : <><Download size={16} /> {nativeAndroid ? 'Install' : 'Download'}</>}
+          : <><Download size={16} /> {webRelease ? 'Install WebApp' : nativeAndroid ? 'Install' : 'Download'}</>}
       </button>
     </div>
   );
