@@ -7,26 +7,33 @@ import { ChevronLeft, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Te
 
 const OS_ICONS = { ios: Phone, android: Smartphone, windows: Monitor, macos: Laptop, linux: Terminal, web: Globe2 };
 const MTP2026_ORIGIN = 'https://mtp2026-app-launcher.onrender.com';
+const MTP2026_PROFILES = [
+  ['mtp2026', 'MTP2026 Device OS'],
+  ['android', 'MTP2026 Android OS'],
+  ['windows11', 'MTP2026 Desktop OS'],
+  ['gaming', 'MTP2026 Gaming OS'],
+];
 
-function getMtpInstallUrl(slug) {
+function getMtpInstallUrl(slug, mode = '') {
   const url = new URL(MTP2026_ORIGIN);
   url.searchParams.set('vexastoreInstall', '1');
   url.searchParams.set('slug', slug);
+  if (mode) url.searchParams.set('guestMode', mode);
   return url.toString();
 }
 
-function openWebAppFromStore(app, slug, notify, installToMtp = false) {
+function openWebAppFromStore(app, slug, notify, installToMtp = false, guestMode = '') {
   const target = app?.website || '';
   if (!target) { notify('This application has no WebApp URL published yet.'); return; }
   let url;
   try { url = new URL(target); if (url.protocol !== 'https:') throw new Error('HTTPS required'); }
   catch (_) { notify('The published WebApp URL is invalid.'); return; }
-  const payload = { type: 'MTP2026_VEXASTORE_INSTALL', app: { id: app.id, slug, title: app.name, description: app.description || app.long_description || '', url: url.toString(), iconUrl: app.icon_url || null, source: 'VexaStore', sourceUrl: window.location.href } };
+  const payload = { type: 'MTP2026_VEXASTORE_INSTALL', app: { id: app.id, slug, title: app.name, description: app.description || app.long_description || '', url: url.toString(), iconUrl: app.icon_url || null, source: 'VexaStore', sourceUrl: window.location.href, guestMode: guestMode || null } };
   if (installToMtp) {
     let delivered = false;
     try { if (window.opener && !window.opener.closed) { window.opener.postMessage(payload, MTP2026_ORIGIN); delivered = true; } } catch (_) {}
-    if (!delivered) window.open(getMtpInstallUrl(slug), '_blank', 'noopener,noreferrer');
-    notify(delivered ? 'Installation sent to MTP2026.' : 'Opening MTP2026 to complete installation…');
+    if (!delivered) window.open(getMtpInstallUrl(slug, guestMode), '_blank', 'noopener,noreferrer');
+    notify(delivered ? `Installation sent to ${guestMode || 'MTP2026'}.` : 'Opening MTP2026 to complete installation…');
     return;
   }
   try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, MTP2026_ORIGIN); } catch (_) {}
@@ -99,10 +106,10 @@ export default function AppPage() {
       </div>
 
       {hasWebApp && <div className="glass-card p-6 border border-accent-primary/20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div><h2 className="text-lg font-semibold text-white flex items-center gap-2"><Globe2 size={19} /> WebApp</h2><p className="text-sm text-text-secondary mt-1">One published HTTPS WebApp can be registered in MTP2026 and installed as a PWA on browsers that expose the platform install prompt.</p></div>
+        <div className="flex flex-col gap-4">
+          <div><h2 className="text-lg font-semibold text-white flex items-center gap-2"><Globe2 size={19} /> WebApp installation</h2><p className="text-sm text-text-secondary mt-1">Install this HTTPS WebApp into an MTP2026 guest profile, or use your physical device/browser installation flow. MTP2026-owned profiles share the same VexaAccount application library.</p></div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), true)} className="btn-primary flex items-center justify-center gap-2"><PackageCheck size={16} /> Install to MTP2026</button>
+            {MTP2026_PROFILES.map(([id, label]) => <button key={id} onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), true, id)} className="btn-primary flex items-center justify-center gap-2"><PackageCheck size={16} /> {label}</button>)}
             <button onClick={installPwa} className="btn-primary flex items-center justify-center gap-2"><PlusSquare size={16} /> Install on this device</button>
             <button onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), false)} className="btn-primary flex items-center justify-center gap-2"><Download size={16} /> Open WebApp</button>
           </div>
