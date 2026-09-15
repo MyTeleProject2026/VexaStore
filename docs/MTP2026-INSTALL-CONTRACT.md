@@ -2,6 +2,17 @@
 
 VexaStore publishes applications; MTP2026 is the consumer/launcher. The repositories remain separate.
 
+## Production guest targets
+
+Every published HTTPS WebApp may target the four MTP2026-owned production Web-OS profiles:
+
+- `mtp2026` — **MTP2026 Device OS** (mobile/gesture shell)
+- `android` — **MTP2026 Android OS** (Android-style mobile shell)
+- `windows11` — **MTP2026 Desktop OS** (Windows-style desktop shell)
+- `gaming` — **MTP2026 Gaming OS** (gaming/controller shell)
+
+These are original MTP2026 operating-system profiles. They are not redistributed Apple, Microsoft, Google or ASUS firmware. A native MTP2026 build may additionally attach a real ARM64 VM/emulator provider to the same profile contract.
+
 ## WebApp installation
 
 For a published HTTPS WebApp, VexaStore can send this message to an already-open MTP2026 launcher window:
@@ -22,16 +33,11 @@ For a published HTTPS WebApp, VexaStore can send this message to an already-open
 }
 ```
 
-The receiving MTP2026 origin validates the VexaStore origin. MTP2026 then consumes the public install manifest and registers the HTTPS URL through its authenticated `/api/apps` application registry. The local registry is mirrored into every MTP2026-owned guest profile:
-
-- MTP2026 Device OS
-- MTP2026 Android OS
-- MTP2026 Desktop OS
-- MTP2026 Gaming OS
+The receiving MTP2026 origin validates the VexaStore origin. MTP2026 then consumes the public install manifest and registers the HTTPS URL through its authenticated `/api/apps` application registry. The local registry is mirrored into every MTP2026-owned guest profile.
 
 Direct fallback:
 
-`https://mtp2026-app-launcher.onrender.com/?vexastoreInstall=1&slug=<app-slug>`
+`https://mtp2026-app-launcher.onrender.com/?vexastoreInstall=1&slug=<app-slug>&guestMode=<profile>`
 
 MTP2026 consumes this URL, fetches the public VexaStore install manifest, registers the WebApp, and returns the user to the launcher.
 
@@ -39,7 +45,7 @@ MTP2026 consumes this URL, fetches the public VexaStore install manifest, regist
 
 VexaStore exposes the normal browser PWA installation path through `beforeinstallprompt` where the browser supports it. If the browser does not expose that API, the user is directed to open the HTTPS WebApp and use the browser's own **Install app / Add to Home Screen** flow.
 
-A web page must never claim that a physical device installed an application merely because a download completed.
+A web page must never claim that a physical device installed an application merely because a download completed. Browser installation remains controlled by the user's browser and operating system.
 
 ## Native packages
 
@@ -60,17 +66,17 @@ There is no browser-side silent APK installation.
 
 The MTP2026 Windows/Tauri shell hands the HTTPS installer to the host shell. Windows SmartScreen/UAC and the selected installer remain authoritative; the WebView does not silently install executables.
 
-### iOS
+### iOS / MTP2026 Device OS
 
-MTP2026 Device OS can install/launch HTTPS WebApps as browser/PWA applications. Arbitrary IPA sideloading is not performed by the web application. Native iOS distribution must use an Apple-authorized distribution/signing mechanism.
+MTP2026 Device OS installs and runs HTTPS WebApps inside its own application runtime. Arbitrary IPA sideloading is not performed by the web application. Native iOS distribution must use an Apple-authorized distribution/signing mechanism.
 
 ### Gaming
 
 MTP2026 Gaming OS uses the shared WebApp registry. Native gaming packages require a compatible native installer/runtime on the host.
 
-## MTP2026 install-manifest v4
+## Install manifest
 
-The public manifest exposes:
+The public install manifest is versioned independently from the UI. It exposes:
 
 - `supportedMtp2026Modes`
 - `mtp2026GuestProfiles`
@@ -78,10 +84,10 @@ The public manifest exposes:
 - `webApp.automaticInstallOnPhysicalDevice`
 - `webApp.userApprovalRequiredOnPhysicalDevice`
 - `nativePackages` with URL, version, SHA-256 and package metadata
-- `installTargets` for each MTP2026 profile
+- `installTargets` for each MTP2026 profile when available
 - `installIntent` for direct MTP2026 installation
 
-This allows MTP2026 to make a real platform decision instead of pretending every package is installable on every host.
+The MTP2026 client also accepts the historical `windows` native-package key as an alias for the `windows11` guest target so older published package records continue to work.
 
 ## Security requirements
 
@@ -91,3 +97,4 @@ This allows MTP2026 to make a real platform decision instead of pretending every
 - Verify SHA-256 whenever published release metadata contains one.
 - Never silently install native packages.
 - Never claim iOS/Windows/Android firmware replacement from a browser shell.
+- Native VM execution is reported separately from the deployed Web-OS shell runtime.
