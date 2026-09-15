@@ -14,16 +14,34 @@ export default function PlatformPublish() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [published, setPublished] = useState(null);
+  const [verification, setVerification] = useState(null);
+
+  const verifyManifest = async (slug) => {
+    if (!slug) return null;
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
+      const response = await fetch(`${base}/api/platform/apps/${encodeURIComponent(slug)}/install-manifest`, { cache: 'no-store' });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || !body.success || !body.data) throw new Error(body.message || `Manifest verification failed (${response.status})`);
+      const manifest = body.data;
+      setVerification({ ok: true, schema: manifest.schema, app: manifest.app, webApp: manifest.webApp, profiles: manifest.supportedMtp2026Modes || [] });
+      return manifest;
+    } catch (error) {
+      setVerification({ ok: false, error: error.message || String(error) });
+      return null;
+    }
+  };
 
   const submit = async (event) => {
     event.preventDefault();
-    setBusy(true); setMessage(''); setPublished(null);
+    setBusy(true); setMessage(''); setPublished(null); setVerification(null);
     try {
       const response = await api.publishWebApp(form);
       const data = response.data?.data || {};
       setPublished(data);
       setMessage(`Published successfully. App ID: ${data.appId || 'created'}`);
       setForm(initialForm);
+      await verifyManifest(data.slug || form.slug || form.name);
     } catch (error) {
       setMessage(getApiErrorMessage(error));
     } finally { setBusy(false); }
@@ -35,7 +53,7 @@ export default function PlatformPublish() {
     <div className="p-4 md:p-6 space-y-5">
       <div>
         <h1 className="text-xl font-bold">Platform App Publishing</h1>
-        <p className="text-sm opacity-70 mt-1">Publish an HTTPS WebApp once. VexaStore creates the signed installation contract used by MTP2026 and by normal device/browser installation flows.</p>
+        <p className="text-sm opacity-70 mt-1">Publish an HTTPS WebApp once. VexaStore creates the installation contract used by MTP2026 and normal device/browser installation flows.</p>
       </div>
       <form onSubmit={submit} className="max-w-2xl space-y-4 rounded-2xl border border-white/10 p-4 bg-black/10">
         {[
@@ -65,7 +83,11 @@ export default function PlatformPublish() {
       {published && <div className="max-w-2xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4 text-sm space-y-3">
         <b>Installation contract created</b>
         <p className="opacity-80">VexaStore manifest: <code>{published.installManifestPath}</code></p>
-        <p className="opacity-80">All four MTP2026 guest profiles now have a direct installation target:</p>
+        {verification && <div className={`rounded-xl border p-3 ${verification.ok ? 'border-emerald-400/30 bg-emerald-400/10' : 'border-red-400/30 bg-red-400/10'}`}>
+          <b>{verification.ok ? '✓ Manifest verified' : '✕ Manifest verification failed'}</b>
+          {verification.ok ? <p className="text-xs opacity-80 mt-1">Schema: {verification.schema} · Profiles: {(verification.profiles || []).join(', ') || 'none'}</p> : <p className="text-xs opacity-80 mt-1">{verification.error}</p>}
+        </div>}
+        <p className="opacity-80">All four MTP2026 guest profiles have a direct installation target:</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {(published.profileInstallUrls ? Object.entries(published.profileInstallUrls) : [['mtp2026', published.mtp2026InstallUrl]]).map(([mode, url]) => <a key={mode} className="rounded-lg border border-white/10 bg-black/10 px-3 py-2 hover:border-cyan-400/40" href={url} target="_blank" rel="noreferrer"><b>{mode === 'mtp2026' ? 'MTP2026 Device OS' : mode === 'android' ? 'MTP2026 Android OS' : mode === 'windows11' ? 'MTP2026 Desktop OS' : 'MTP2026 Gaming OS'}</b><span className="block text-[11px] opacity-60">Open installer</span></a>)}
         </div>
