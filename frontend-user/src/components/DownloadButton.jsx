@@ -4,6 +4,7 @@ import { appApi } from '../services/api';
 import { useNotification } from '../hooks/useNotification';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
+const MTP2026_ORIGIN = 'https://mtp2026-app-launcher.onrender.com';
 
 function isNativeAndroid() {
   return typeof window !== 'undefined' && Boolean(window.VexaStoreAndroid?.isNativeAndroid?.());
@@ -18,7 +19,41 @@ function isIOSBrowser() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent || '') && !window.MSStream;
 }
 
-export default function DownloadButton({ version, appId }) {
+function mtpGuestMode() {
+  const value = String(document.documentElement.dataset.mtpDeviceMode || localStorage.getItem('mtp2026-default-system-os') || '').toLowerCase();
+  if (value === 'ios') return 'mtp2026';
+  if (value === 'windows') return 'windows11';
+  return ['mtp2026', 'android', 'windows11', 'gaming'].includes(value) ? value : null;
+}
+
+function sendMtpInstallRequest(appId, version, guestMode) {
+  const slug = version?.slug || version?.app_slug || version?.appSlug || '';
+  if (!slug || !guestMode) return false;
+  const payload = {
+    type: 'MTP2026_VEXASTORE_INSTALL',
+    app: {
+      id: appId,
+      slug,
+      title: version?.app_name || version?.name || 'VexaApp',
+      url: version?.web_url || version?.website || version?.file_url || null,
+      source: 'VexaStore',
+      guestMode,
+    },
+  };
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(payload, MTP2026_ORIGIN);
+      return true;
+    }
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(payload, MTP2026_ORIGIN);
+      return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+export default function DownloadButton({ version, appId, appSlug = '' }) {
   const [state, setState] = useState('idle');
   const [installedVersion, setInstalledVersion] = useState('');
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -74,12 +109,16 @@ export default function DownloadButton({ version, appId }) {
     }
     try {
       setState('tracking');
-      await appApi.trackDownload({
-        app_id: appId,
-        version_id: version.id,
-        os: 'web',
-        user_agent: navigator.userAgent,
-      });
+      await appApi.trackDownload({ app_id: appId, version_id: version.id, os: 'web', user_agent: navigator.userAgent });
+      const mode = mtpGuestMode();
+      if (mode) {
+        const sent = sendMtpInstallRequest(appId, { ...version, slug: appSlug, web_url: fileUrl }, mode);
+        if (sent) {
+          setState('idle');
+          showSuccess(`MTP2026 ${mode} installation request sent.`);
+          return;
+        }
+      }
       if (deferredPrompt) {
         setState('installing');
         await deferredPrompt.prompt();
@@ -90,11 +129,8 @@ export default function DownloadButton({ version, appId }) {
         return;
       }
       setState('idle');
-      if (isIOSBrowser()) {
-        showSuccess('On iPhone/iPad: open the WebApp, tap Share, then “Add to Home Screen”.');
-      } else {
-        showSuccess('Your browser controls WebApp installation. Open the WebApp and use the browser install/add-to-home-screen option.');
-      }
+      if (isIOSBrowser()) showSuccess('On iPhone/iPad: open the WebApp, tap Share, then “Add to Home Screen”.');
+      else showSuccess('Your browser controls WebApp installation. Open the WebApp and use the browser install/add-to-home-screen option.');
       window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setState('idle');
@@ -110,22 +146,20 @@ export default function DownloadButton({ version, appId }) {
     }
     try {
       setState('tracking');
-      await appApi.trackDownload({
-        app_id: appId,
-        version_id: version.id,
-        os: version.os,
-        user_agent: navigator.userAgent,
-      });
+      await appApi.trackDownload({ app_id: appId, version_id: version.id, os: version.os, user_agent: navigator.userAgent });
+      const mode = mtpGuestMode();
+      if (mode && appSlug) {
+        const sent = sendMtpInstallRequest(appId, { ...version, slug: appSlug }, mode);
+        if (sent) {
+          setState('idle');
+          showSuccess(`${version.os.toUpperCase()} package install request sent to MTP2026 ${mode}.`);
+          return;
+        }
+      }
       if (nativeAndroid) {
         if (typeof window.VexaStoreAndroid.downloadAndInstall !== 'function') throw new Error('Android installer bridge unavailable');
         setState('downloading');
-        window.VexaStoreAndroid.downloadAndInstall(
-          absoluteUrl,
-          version.sha256 || version.apk_sha256 || '',
-          version.package_name || version.android_package_name || '',
-          version.version || '',
-          'vexastoreInstallCallback'
-        );
+        window.VexaStoreAndroid.downloadAndInstall(absoluteUrl, version.sha256 || version.apk_sha256 || '', version.package_name || version.android_package_name || '', version.version || '', 'vexastoreInstallCallback');
         return;
       }
       setState('idle');
