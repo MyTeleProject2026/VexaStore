@@ -5,6 +5,7 @@ import { useNotification } from '../hooks/useNotification';
 import DownloadButton from '../components/DownloadButton';
 import { ChevronLeft, Star, ExternalLink, Smartphone, Phone, Monitor, Laptop, Terminal, Globe2, Download, PackageCheck, PlusSquare } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 const OS_ICONS = { ios: Phone, android: Smartphone, windows: Monitor, macos: Laptop, linux: Terminal, web: Globe2 };
 const MTP2026_ORIGIN = 'https://mtp2026-app-launcher.onrender.com';
 const MTP2026_PROFILES = [
@@ -22,22 +23,66 @@ function getMtpInstallUrl(slug, mode = '') {
   return url.toString();
 }
 
-function openWebAppFromStore(app, slug, notify, installToMtp = false, guestMode = '') {
+function buildInstallPayload(app, slug, guestMode = '') {
   const target = app?.website || '';
-  if (!target) { notify('This application has no WebApp URL published yet.'); return; }
-  let url;
-  try { url = new URL(target); if (url.protocol !== 'https:') throw new Error('HTTPS required'); }
-  catch (_) { notify('The published WebApp URL is invalid.'); return; }
-  const payload = { type: 'MTP2026_VEXASTORE_INSTALL', app: { id: app.id, slug, title: app.name, description: app.description || app.long_description || '', url: url.toString(), iconUrl: app.icon_url || null, source: 'VexaStore', sourceUrl: window.location.href, guestMode: guestMode || null } };
-  if (installToMtp) {
-    let delivered = false;
-    try { if (window.opener && !window.opener.closed) { window.opener.postMessage(payload, MTP2026_ORIGIN); delivered = true; } } catch (_) {}
-    if (!delivered) window.open(getMtpInstallUrl(slug, guestMode), '_blank', 'noopener,noreferrer');
-    notify(delivered ? `Installation sent to ${guestMode || 'MTP2026'}.` : 'Opening MTP2026 to complete installation…');
-    return;
+  if (!target) throw new Error('This application has no WebApp URL published yet.');
+  const url = new URL(target);
+  if (url.protocol !== 'https:') throw new Error('The published WebApp URL must use HTTPS.');
+  return {
+    type: 'MTP2026_VEXASTORE_INSTALL',
+    app: {
+      id: app.id,
+      slug,
+      title: app.name,
+      description: app.description || app.long_description || '',
+      url: url.toString(),
+      iconUrl: app.icon_url || null,
+      source: 'VexaStore',
+      sourceUrl: window.location.href,
+      guestMode: guestMode || null,
+    },
+  };
+}
+
+function postToMtp2026(payload) {
+  // This is the important path when VexaStore is running inside the MTP2026
+  // guest WebApp runtime: the launcher owns the authenticated installation
+  // transaction and can update every MTP2026 guest profile.
+  if (window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage(payload, MTP2026_ORIGIN);
+      return true;
+    } catch (_) {}
   }
-  try { if (window.opener && !window.opener.closed) window.opener.postMessage(payload, MTP2026_ORIGIN); } catch (_) {}
-  window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  // Also support VexaStore opened as a child window from the launcher.
+  if (window.opener && !window.opener.closed) {
+    try {
+      window.opener.postMessage(payload, MTP2026_ORIGIN);
+      return true;
+    } catch (_) {}
+  }
+  return false;
+}
+
+function openWebAppFromStore(app, slug, notify, installToMtp = false, guestMode = '') {
+  try {
+    const payload = buildInstallPayload(app, slug, guestMode);
+    if (installToMtp) {
+      const delivered = postToMtp2026(payload);
+      if (!delivered) window.open(getMtpInstallUrl(slug, guestMode), '_blank', 'noopener,noreferrer');
+      notify(delivered ? `Installation sent to ${guestMode || 'MTP2026'}.` : 'Opening MTP2026 to complete installation…');
+      return;
+    }
+    // If the store itself is embedded in MTP2026, use the launcher bridge even
+    // for the normal WebApp button so installation does not depend on popups.
+    if (postToMtp2026(payload)) {
+      notify(`MTP2026 installation request sent for ${app.name}.`);
+      return;
+    }
+    window.open(payload.app.url, '_blank', 'noopener,noreferrer');
+  } catch (error) {
+    notify(error.message || 'The published WebApp URL is invalid.');
+  }
 }
 
 export default function AppPage() {
@@ -87,18 +132,18 @@ export default function AppPage() {
   const availableOS = Object.keys(versionsByOS);
   const currentVersions = selectedOS ? versionsByOS[selectedOS] || [] : [];
   const hasWebApp = Boolean(app.website);
-  const mtpInstallMode = new URLSearchParams(window.location.search).get('mtp2026Install') === '1';
+  const mtpInstallMode = new URLSearchParams(window.location.search).get('vexastoreInstall') === '1' || new URLSearchParams(window.location.search).get('mtp2026Install') === '1';
 
   return (
     <div className="space-y-6">
       <Link to="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition"><ChevronLeft size={20} /> Back to Home</Link>
       <div className="glass-card p-6 flex flex-col md:flex-row gap-6">
         <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-dark-bg border border-dark-border flex-shrink-0 mx-auto md:mx-0">
-          {app.icon_url ? <img src={`${import.meta.env.VITE_API_BASE_URL}${app.icon_url}`} alt={app.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-accent-primary">{app.name.charAt(0).toUpperCase()}</div>}
+          {app.icon_url ? <img src={`${API_BASE_URL}${app.icon_url}`} alt={app.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-accent-primary">{app.name.charAt(0).toUpperCase()}</div>}
         </div>
         <div className="flex-1 text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-white">{app.name}</h1>
-          <p className="text-text-secondary">{app.developer || 'VexaTrade'}</p>
+          <p className="text-text-secondary">{app.developer || 'MTP2026'}</p>
           <div className="flex items-center justify-center md:justify-start gap-3 mt-2"><div className="flex items-center"><Star size={16} className="fill-yellow-400 text-yellow-400" /><span className="text-sm font-medium ml-1">{Number(app.rating || 0).toFixed(1)}</span></div><span className="text-text-secondary">•</span><span className="text-sm text-text-secondary">{app.total_downloads || 0} downloads</span></div>
           <p className="text-sm text-text-secondary mt-3 max-w-2xl">{app.long_description || app.description}</p>
           {app.website && <a href={app.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent-primary hover:underline text-sm mt-2">Visit website <ExternalLink size={14} /></a>}
@@ -114,7 +159,7 @@ export default function AppPage() {
             <button onClick={() => openWebAppFromStore(app, slug, (message) => showSuccess(message), false)} className="btn-primary flex items-center justify-center gap-2"><Download size={16} /> Open WebApp</button>
           </div>
         </div>
-        {mtpInstallMode && <p className="text-xs text-accent-primary mt-3">MTP2026 installation mode is active. Return to the launcher to finish registering this application.</p>}
+        {mtpInstallMode && <p className="text-xs text-accent-primary mt-3">MTP2026 installation mode is active. The launcher will register this application in the current VexaAccount application library.</p>}
       </div>}
 
       <div className="glass-card p-6">
@@ -122,7 +167,7 @@ export default function AppPage() {
         {availableOS.length > 0 ? <><div className="flex flex-wrap gap-2 mb-4">{availableOS.map((os) => { const Icon = OS_ICONS[os] || Smartphone; const isActive = selectedOS === os; return <button key={os} onClick={() => setSelectedOS(os)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${isActive ? 'bg-accent-primary text-black' : 'bg-dark-bg border border-dark-border text-text-secondary hover:bg-dark-card/80'}`}><Icon size={16} />{os === 'web' ? 'WebApp / PWA' : os.charAt(0).toUpperCase() + os.slice(1)}</button>; })}</div>{currentVersions.map((version) => <DownloadButton key={version.id} version={version} appId={app.id} />)}</> : <p className="text-text-secondary">No native releases available yet. Use the WebApp option above when a website is published.</p>}
       </div>
 
-      {app.screenshots && app.screenshots.length > 0 && <div className="glass-card p-6"><h2 className="text-lg font-semibold text-white mb-4">Screenshots</h2><div className="flex gap-4 overflow-x-auto pb-2 snap-x">{app.screenshots.map((url, idx) => <img key={idx} src={`${import.meta.env.VITE_API_BASE_URL}${url}`} alt={`Screenshot ${idx+1}`} className="h-48 w-auto rounded-xl border border-dark-border snap-start" loading="lazy" />)}</div></div>}
+      {app.screenshots && app.screenshots.length > 0 && <div className="glass-card p-6"><h2 className="text-lg font-semibold text-white mb-4">Screenshots</h2><div className="flex gap-4 overflow-x-auto pb-2 snap-x">{app.screenshots.map((url, idx) => <img key={idx} src={`${API_BASE_URL}${url}`} alt={`Screenshot ${idx+1}`} className="h-48 w-auto rounded-xl border border-dark-border snap-start" loading="lazy" />)}</div></div>}
       {app.reviews && app.reviews.length > 0 && <div className="glass-card p-6"><h2 className="text-lg font-semibold text-white mb-4">Reviews</h2><div className="space-y-3">{app.reviews.map((review, idx) => <div key={idx} className="border-b border-dark-border pb-3 last:border-0"><div className="flex items-center gap-2"><div className="flex items-center">{[...Array(5)].map((_, i) => <Star key={i} size={14} className={i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-text-secondary'} />)}</div><span className="text-xs text-text-secondary">{review.user_email || 'Anonymous'}</span></div><p className="text-sm text-text-secondary mt-1">{review.review}</p></div>)}</div></div>}
     </div>
   );
