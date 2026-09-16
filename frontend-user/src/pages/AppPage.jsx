@@ -28,38 +28,15 @@ function buildInstallPayload(app, slug, guestMode = '') {
   if (!target) throw new Error('This application has no WebApp URL published yet.');
   const url = new URL(target);
   if (url.protocol !== 'https:') throw new Error('The published WebApp URL must use HTTPS.');
-  return {
-    type: 'MTP2026_VEXASTORE_INSTALL',
-    app: {
-      id: app.id,
-      slug,
-      title: app.name,
-      description: app.description || app.long_description || '',
-      url: url.toString(),
-      iconUrl: app.icon_url || null,
-      source: 'VexaStore',
-      sourceUrl: window.location.href,
-      guestMode: guestMode || null,
-    },
-  };
+  return { type: 'MTP2026_VEXASTORE_INSTALL', app: { id: app.id, slug, title: app.name, description: app.description || app.long_description || '', url: url.toString(), iconUrl: app.icon_url || null, source: 'VexaStore', sourceUrl: window.location.href, guestMode: guestMode || null } };
 }
 
 function postToMtp2026(payload) {
-  // This is the important path when VexaStore is running inside the MTP2026
-  // guest WebApp runtime: the launcher owns the authenticated installation
-  // transaction and can update every MTP2026 guest profile.
   if (window.parent && window.parent !== window) {
-    try {
-      window.parent.postMessage(payload, MTP2026_ORIGIN);
-      return true;
-    } catch (_) {}
+    try { window.parent.postMessage(payload, MTP2026_ORIGIN); return true; } catch (_) {}
   }
-  // Also support VexaStore opened as a child window from the launcher.
   if (window.opener && !window.opener.closed) {
-    try {
-      window.opener.postMessage(payload, MTP2026_ORIGIN);
-      return true;
-    } catch (_) {}
+    try { window.opener.postMessage(payload, MTP2026_ORIGIN); return true; } catch (_) {}
   }
   return false;
 }
@@ -73,16 +50,12 @@ function openWebAppFromStore(app, slug, notify, installToMtp = false, guestMode 
       notify(delivered ? `Installation sent to ${guestMode || 'MTP2026'}.` : 'Opening MTP2026 to complete installation…');
       return;
     }
-    // If the store itself is embedded in MTP2026, use the launcher bridge even
-    // for the normal WebApp button so installation does not depend on popups.
     if (postToMtp2026(payload)) {
       notify(`MTP2026 installation request sent for ${app.name}.`);
       return;
     }
     window.open(payload.app.url, '_blank', 'noopener,noreferrer');
-  } catch (error) {
-    notify(error.message || 'The published WebApp URL is invalid.');
-  }
+  } catch (error) { notify(error.message || 'The published WebApp URL is invalid.'); }
 }
 
 export default function AppPage() {
@@ -164,7 +137,7 @@ export default function AppPage() {
 
       <div className="glass-card p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Download for</h2>
-        {availableOS.length > 0 ? <><div className="flex flex-wrap gap-2 mb-4">{availableOS.map((os) => { const Icon = OS_ICONS[os] || Smartphone; const isActive = selectedOS === os; return <button key={os} onClick={() => setSelectedOS(os)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${isActive ? 'bg-accent-primary text-black' : 'bg-dark-bg border border-dark-border text-text-secondary hover:bg-dark-card/80'}`}><Icon size={16} />{os === 'web' ? 'WebApp / PWA' : os.charAt(0).toUpperCase() + os.slice(1)}</button>; })}</div>{currentVersions.map((version) => <DownloadButton key={version.id} version={version} appId={app.id} />)}</> : <p className="text-text-secondary">No native releases available yet. Use the WebApp option above when a website is published.</p>}
+        {availableOS.length > 0 ? <><div className="flex flex-wrap gap-2 mb-4">{availableOS.map((os) => { const Icon = OS_ICONS[os] || Smartphone; const isActive = selectedOS === os; return <button key={os} onClick={() => setSelectedOS(os)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${isActive ? 'bg-accent-primary text-black' : 'bg-dark-bg border border-dark-border text-text-secondary hover:bg-dark-card/80'}`}><Icon size={16} />{os === 'web' ? 'WebApp / PWA' : os.charAt(0).toUpperCase() + os.slice(1)}</button>; })}</div>{currentVersions.map((version) => <DownloadButton key={version.id} version={version} appId={app.id} appSlug={slug} />)}</> : <p className="text-text-secondary">No native releases available yet. Use the WebApp option above when a website is published.</p>}
       </div>
 
       {app.screenshots && app.screenshots.length > 0 && <div className="glass-card p-6"><h2 className="text-lg font-semibold text-white mb-4">Screenshots</h2><div className="flex gap-4 overflow-x-auto pb-2 snap-x">{app.screenshots.map((url, idx) => <img key={idx} src={`${API_BASE_URL}${url}`} alt={`Screenshot ${idx+1}`} className="h-48 w-auto rounded-xl border border-dark-border snap-start" loading="lazy" />)}</div></div>}
