@@ -338,7 +338,7 @@ export default function Layout() {
 
       {/* ─── Mobile Main Content ─── */}
       <div className="lg:hidden">
-        <main className="max-w-7xl mx-auto px-4 py-4">
+        <main className="max-w-7xl mx-auto px-4 py-4 pb-24 lg:pb-4">
           <Outlet />
         </main>
       </div>
