@@ -25,7 +25,7 @@ export default function TwoFactorAuth() {
     );
   };
 
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   useEffect(() => {
     load2FAStatus();
@@ -40,7 +40,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -64,7 +64,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/generate`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/twofa/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/verify-enable`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/twofa/verify-enable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ export default function TwoFactorAuth() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/disable`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/twofa/disable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
