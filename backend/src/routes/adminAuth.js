@@ -8,9 +8,6 @@ const { authAdmin } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
-// ──────────────────────────────────────────────────────────────
-// POST: Admin Login (Database + Environment Fallback)
-// ──────────────────────────────────────────────────────────────
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -19,10 +16,13 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
-    // Try: Check admin_users table
-    let [rows] = await pool.query(
+    const normalizedEmail = email.trim().toLowerCase();
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vexastore.com').trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+
+    const [rows] = await pool.query(
       'SELECT * FROM admin_users WHERE email = ? AND is_active = 1',
-      [email.trim().toLowerCase()]
+      [normalizedEmail]
     );
 
     let admin = null;
@@ -30,22 +30,39 @@ router.post('/login', async (req, res, next) => {
 
     if (rows.length > 0) {
       admin = rows[0];
-      const valid = await bcrypt.compare(password, admin.password);
-      if (!valid) {
-        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+      let valid = false;
+      try {
+        valid = typeof admin.password === 'string' && admin.password.length === 60
+          ? await bcrypt.compare(password, admin.password)
+          : false;
+      } catch (compareError) {
+        console.warn('⚠️ Stored admin password hash is invalid:', compareError.message);
       }
 
-      // Update last login
+      if (!valid) {
+        // If the configured production/admin credentials are correct, repair a
+        // stale or malformed seeded hash instead of permanently locking the
+        // configured administrator out.
+        if (normalizedEmail === adminEmail && password === adminPassword) {
+          const repairedHash = await bcrypt.hash(adminPassword, 10);
+          await pool.query(
+            'UPDATE admin_users SET password = ?, is_active = 1, updated_at = NOW() WHERE id = ?',
+            [repairedHash, admin.id]
+          );
+          admin.password = repairedHash;
+        } else {
+          return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+      }
+
       await pool.query(
         'UPDATE admin_users SET last_login = NOW() WHERE id = ?',
         [admin.id]
       );
     } else {
-      // Fallback: Environment variables
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@vexastore.com';
-      const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
-
-      if (email.trim().toLowerCase() === adminEmail.toLowerCase() && password === adminPassword) {
+      // Environment credentials remain the emergency/bootstrap fallback.
+      if (normalizedEmail === adminEmail && password === adminPassword) {
         isEnvAdmin = true;
         admin = {
           id: 1,
@@ -80,9 +97,6 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// ──────────────────────────────────────────────────────────────
-// GET: Verify admin token
-// ──────────────────────────────────────────────────────────────
 router.get('/verify', authAdmin, (req, res) => {
   res.json({
     success: true,
@@ -90,9 +104,6 @@ router.get('/verify', authAdmin, (req, res) => {
   });
 });
 
-// ──────────────────────────────────────────────────────────────
-// POST: Admin logout
-// ──────────────────────────────────────────────────────────────
 router.post('/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
