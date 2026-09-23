@@ -31,7 +31,7 @@ export default function Profile() {
   });
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   const getUserFromStorage = () => {
     try {
@@ -80,7 +80,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -147,7 +147,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/full`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ export default function Profile() {
       const avatarUrl = uploadData.avatar_url;
 
       // ✅ Update profile with Cloudinary URL
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/picture`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile/picture`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +252,7 @@ export default function Profile() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/resend-verification`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
