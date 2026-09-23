@@ -200,11 +200,29 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 async function ensureReleaseMetadataSchema() {
+  const tableStatements = [
+    `CREATE TABLE IF NOT EXISTS store_users (id INT AUTO_INCREMENT PRIMARY KEY,email VARCHAR(100) NOT NULL UNIQUE,password VARCHAR(255) NULL,name VARCHAR(100) NOT NULL,google_id VARCHAR(100) NULL,is_verified TINYINT DEFAULT 0,is_active TINYINT DEFAULT 1,avatar_url VARCHAR(500) NULL,phone VARCHAR(50) NULL,bio TEXT NULL,country VARCHAR(100) NULL,twofa_enabled TINYINT(1) NOT NULL DEFAULT 0,twofa_secret VARCHAR(255) NULL,twofa_backup_codes TEXT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,INDEX idx_email (email),INDEX idx_google (google_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS otp_codes (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,otp_code VARCHAR(6) NOT NULL,purpose VARCHAR(30) DEFAULT 'email_verification',expires_at DATETIME NOT NULL,is_used TINYINT DEFAULT 0,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,INDEX idx_user (user_id),INDEX idx_code (otp_code)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS user_activity_logs (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,action VARCHAR(100) NOT NULL,ip_address VARCHAR(45) NULL,user_agent TEXT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,INDEX idx_user_created (user_id,created_at),INDEX idx_action (action)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS user_connected_apps (id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,app_name VARCHAR(100) NOT NULL,app_slug VARCHAR(100) NOT NULL,status VARCHAR(30) NOT NULL DEFAULT 'connected',connected_at DATETIME DEFAULT CURRENT_TIMESTAMP,last_used_at DATETIME DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,UNIQUE KEY unique_user_app (user_id,app_slug),INDEX idx_user (user_id),INDEX idx_status (status)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS site_settings (id INT PRIMARY KEY DEFAULT 1,site_title VARCHAR(255) DEFAULT 'VexaStore',site_subtitle VARCHAR(255) DEFAULT 'Official App Hub',logo_url VARCHAR(500),favicon_url VARCHAR(500),primary_color VARCHAR(20) DEFAULT '#06b6d4',secondary_color VARCHAR(20) DEFAULT '#8b5cf6',background_color VARCHAR(20) DEFAULT '#0b0b0b',font_family VARCHAR(100) DEFAULT 'Inter, sans-serif',custom_css TEXT,custom_header_html TEXT,custom_footer_html TEXT,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS news_articles (id INT AUTO_INCREMENT PRIMARY KEY,title VARCHAR(255) NOT NULL,slug VARCHAR(255) NOT NULL UNIQUE,content TEXT NOT NULL,image_url VARCHAR(500),is_featured TINYINT DEFAULT 0,is_published TINYINT DEFAULT 1,published_at DATETIME DEFAULT CURRENT_TIMESTAMP,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,INDEX idx_slug (slug),INDEX idx_published (is_published)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  ];
+  for (const statement of tableStatements) await pool.query(statement);
+
   const statements = [
     // Keep the live database compatible with the admin app-management routes.
     // Some existing VexaStore databases were created from an older apps schema.
     `ALTER TABLE apps ADD COLUMN is_free TINYINT(1) NOT NULL DEFAULT 1`,
     `ALTER TABLE apps ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0`,
+    `ALTER TABLE apps ADD COLUMN average_rating DECIMAL(2,1) NOT NULL DEFAULT 0`,
+    `ALTER TABLE store_users ADD COLUMN avatar_url VARCHAR(500) NULL`,
+    `ALTER TABLE store_users ADD COLUMN phone VARCHAR(50) NULL`,
+    `ALTER TABLE store_users ADD COLUMN bio TEXT NULL`,
+    `ALTER TABLE store_users ADD COLUMN country VARCHAR(100) NULL`,
+    `ALTER TABLE store_users ADD COLUMN twofa_enabled TINYINT(1) NOT NULL DEFAULT 0`,
+    `ALTER TABLE store_users ADD COLUMN twofa_secret VARCHAR(255) NULL`,
+    `ALTER TABLE store_users ADD COLUMN twofa_backup_codes TEXT NULL`,
     `ALTER TABLE app_versions ADD COLUMN sha256 VARCHAR(64) NULL`,
     `ALTER TABLE app_versions ADD COLUMN package_name VARCHAR(255) NULL`,
     `ALTER TABLE app_versions ADD COLUMN version_code BIGINT NULL`,
