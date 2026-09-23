@@ -12,6 +12,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true;
 });
 
 // ─── REQUEST INTERCEPTOR ────────────────────────────────────────────
@@ -76,131 +77,27 @@ export const appApi = {
 
 // ─── VEXA ACCOUNT API (For Auth & Profile) ──────────────────────────
 export const vexaAccountApi = {
-  // ─── Auth ──────────────────────────────────────────────────────
-  login: (data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  register: (data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  forgotPassword: (email) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  }).then(res => res.json()),
-
-  resetPassword: (data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  // ─── Profile ──────────────────────────────────────────────────
-  getProfile: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  updateProfile: (token, data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/full`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  updateAvatar: (token, avatarData) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/profile/picture`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ avatar_url: avatarData }),
-  }).then(res => res.json()),
-
-  changePassword: (token, data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/change-password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  resendVerification: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/resend-verification`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  // ─── 2FA ──────────────────────────────────────────────────────
-  generate2FA: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  }).then(res => res.json()),
-
-  verifyEnable2FA: (token, data) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/verify-enable`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  }).then(res => res.json()),
-
-  disable2FA: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/twofa/disable`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  }).then(res => res.json()),
-
-  // ─── Sessions & Activity ──────────────────────────────────────
-  getSessions: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/sessions`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  getActivityLog: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/activity-log`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  // ─── Connected Apps ────────────────────────────────────────────
-  getConnectedApps: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/connected-apps`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  disconnectApp: (token, appSlug) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/disconnect-app`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ app_slug: appSlug }),
-  }).then(res => res.json()),
-
-  // ─── Data Export ──────────────────────────────────────────────
-  exportData: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/export-data`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(res => res.json()),
-
-  // ─── Delete Account ────────────────────────────────────────────
-  deleteAccount: (token) => fetch(`${VEXA_ACCOUNT_URL}/api/auth/delete-account`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ confirm: 'DELETE' }),
-  }).then(res => res.json()),
+  login: (data) => api.post('/api/auth/login', data).then(r => r.data),
+  register: (data) => api.post('/api/auth/register', data).then(r => r.data),
+  verifyOtp: (data) => api.post('/api/auth/verify-otp', data).then(r => r.data),
+  resendOtp: (data) => api.post('/api/auth/resend-otp', data).then(r => r.data),
+  forgotPassword: (email) => api.post('/api/auth/forgot-password', { email }).then(r => r.data),
+  resetPassword: (data) => api.post('/api/auth/reset-password', data).then(r => r.data),
+  getProfile: () => api.get('/api/auth/profile').then(r => r.data),
+  updateProfile: (tokenOrData, maybeData) => api.put('/api/auth/profile', maybeData === undefined ? tokenOrData : maybeData).then(r => r.data),
+  updateAvatar: (tokenOrData, maybeData) => api.put('/api/auth/profile/picture', { avatar_url: maybeData === undefined ? tokenOrData : maybeData }).then(r => r.data),
+  changePassword: (tokenOrData, maybeData) => api.post('/api/auth/change-password', maybeData === undefined ? tokenOrData : maybeData).then(r => r.data),
+  resendVerification: () => api.post('/api/auth/resend-verification').then(r => r.data),
+  generate2FA: () => api.post('/api/auth/twofa/generate').then(r => r.data),
+  verifyEnable2FA: (tokenOrData, maybeData) => api.post('/api/auth/twofa/verify-enable', maybeData === undefined ? tokenOrData : maybeData).then(r => r.data),
+  disable2FA: () => api.post('/api/auth/twofa/disable').then(r => r.data),
+  getSessions: () => api.get('/api/auth/sessions').then(r => r.data),
+  getActivityLog: () => api.get('/api/auth/activity-log').then(r => r.data),
+  getConnectedApps: () => api.get('/api/auth/connected-apps').then(r => r.data),
+  connectApp: (data) => api.post('/api/auth/connect-app', data).then(r => r.data),
+  disconnectApp: (tokenOrSlug, maybeSlug) => api.post('/api/auth/disconnect-app', { app_slug: maybeSlug === undefined ? tokenOrSlug : maybeSlug }).then(r => r.data),
+  exportData: () => api.get('/api/auth/export-data').then(r => r.data),
+  deleteAccount: () => api.post('/api/auth/delete-account', { confirm: 'DELETE' }).then(r => r.data),
 };
 
 export default api;
