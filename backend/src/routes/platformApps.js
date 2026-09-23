@@ -41,7 +41,6 @@ function platformManifest(app, versions) {
       automaticSilentInstall: false,
       userApprovalRequired: true,
     }]))
-  );
   const profileUrls = profileInstallUrls(app.slug);
   const mtp2026InstallUrl = profileUrls.mtp2026;
   const storeAppUrl = `${VEXASTORE_ORIGIN}/app/${encodeURIComponent(app.slug)}`;
