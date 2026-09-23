@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
+import { vexaAccountApi } from '../services/api';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, LogIn } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 
@@ -74,15 +75,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-
-      const response = await fetch(`${vexaAccountUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
+      const data = await vexaAccountApi.login({ email, password });
 
       if (data.success && data.token) {
         localStorage.setItem('vexastore_user_token', data.token);
