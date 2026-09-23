@@ -9,12 +9,13 @@ const JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
 const COOKIE_NAME = 'vexastore_sso_tx';
 const SESSION_COOKIE = 'vexastore_session';
 const secure = process.env.NODE_ENV === 'production';
+const sameSite = secure ? 'SameSite=None' : 'SameSite=Lax';
 
 function setStateCookie(res, state, verifier) {
   const issuedAt = Date.now();
   const payload = `${state}.${verifier}.${issuedAt}`;
   const value = `${payload}.${sign(payload)}`;
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${secure ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; HttpOnly; ${sameSite}; Max-Age=600${secure ? '; Secure' : ''}`);
 }
 function readState(req) {
   const header = req.headers.cookie || '';
@@ -32,12 +33,12 @@ function readState(req) {
 }
 function clearCookies(res) {
   res.setHeader('Set-Cookie', [
-    `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`,
+    `${COOKIE_NAME}=; Path=/; HttpOnly; ${sameSite}; Max-Age=0${secure ? '; Secure' : ''}`,
     `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`
   ]);
 }
 function sessionCookie(res, token) {
-  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800${secure ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; ${sameSite}; Max-Age=604800${secure ? '; Secure' : ''}`);
 }
 
 router.get('/start', (req, res) => {
