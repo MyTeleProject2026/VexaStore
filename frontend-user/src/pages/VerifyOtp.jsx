@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
+import { vexaAccountApi, getApiErrorMessage } from '../services/api';
 import { ArrowLeft } from 'lucide-react';
 
 export default function VerifyOtp() {
@@ -21,13 +22,7 @@ export default function VerifyOtp() {
     }
     try {
       setLoading(true);
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
-      });
-      const data = await response.json();
+      const data = await vexaAccountApi.verifyOtp({ email, otp });
       if (data.success) {
         showSuccess('Email verified successfully! Please login.');
         navigate('/login');
@@ -35,7 +30,7 @@ export default function VerifyOtp() {
         showError(data.message || 'Verification failed');
       }
     } catch (err) {
-      showError(err.message || 'Verification failed');
+      showError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -48,20 +43,14 @@ export default function VerifyOtp() {
     }
     try {
       setResending(true);
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/resend-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await response.json();
+      const data = await vexaAccountApi.resendOtp({ email });
       if (data.success) {
         showSuccess('OTP resent successfully! Check your email.');
       } else {
         showError(data.message || 'Failed to resend OTP');
       }
     } catch (err) {
-      showError(err.message || 'Failed to resend OTP');
+      showError(getApiErrorMessage(err));
     } finally {
       setResending(false);
     }
