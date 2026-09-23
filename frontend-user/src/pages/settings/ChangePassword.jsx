@@ -26,7 +26,7 @@ export default function ChangePassword() {
     );
   };
 
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export default function ChangePassword() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/change-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
