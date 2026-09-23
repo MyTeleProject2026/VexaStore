@@ -19,7 +19,7 @@ export default function ConnectedDevices() {
     );
   };
 
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   useEffect(() => {
     loadDevices();
@@ -34,7 +34,7 @@ export default function ConnectedDevices() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/sessions`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/sessions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
