@@ -19,7 +19,7 @@ export default function ConnectedApps() {
     );
   };
 
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   useEffect(() => {
     loadApps();
@@ -34,7 +34,7 @@ export default function ConnectedApps() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/connected-apps`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/connected-apps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -76,7 +76,7 @@ export default function ConnectedApps() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/disconnect-app`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/disconnect-app`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
