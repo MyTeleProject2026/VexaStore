@@ -68,7 +68,7 @@ export default function EditProfile() {
         return;
       }
 
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+      const vexaAccountUrl = import.meta.env.VITE_API_BASE_URL || 'https://api-vexaaccount.onrender.com';
       const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -165,7 +165,7 @@ export default function EditProfile() {
           reader.readAsDataURL(form.avatar);
         });
 
-        const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+        const vexaAccountUrl = import.meta.env.VITE_API_BASE_URL || 'https://api-vexaaccount.onrender.com';
         const avatarResponse = await fetch(`${vexaAccountUrl}/api/auth/profile/picture`, {
           method: 'PUT',
           headers: {
@@ -182,8 +182,8 @@ export default function EditProfile() {
       }
 
       // Then update profile
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/profile/full`, {
+      const vexaAccountUrl = import.meta.env.VITE_API_BASE_URL || 'https://api-vexaaccount.onrender.com';
+      const response = await fetch(`${vexaAccountUrl}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
