@@ -22,7 +22,7 @@ export default function DeleteAccount() {
     );
   };
 
-  const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
 
   const handleDelete = async () => {
     if (confirmText !== 'DELETE') {
@@ -43,7 +43,7 @@ export default function DeleteAccount() {
         return;
       }
 
-      const response = await fetch(`${VEXA_ACCOUNT_URL}/api/auth/delete-account`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
