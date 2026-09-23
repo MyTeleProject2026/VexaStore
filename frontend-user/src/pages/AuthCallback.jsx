@@ -20,7 +20,7 @@ export default function AuthCallback() {
 
     if (ssoSuccess && !token) {
       api.get('/api/auth/profile').then((response) => {
-        const user = response.data?.data || response.data?.user || response.data;
+        const user = response.data?.user || response.data?.data || response.data;
         if (user) {
           localStorage.setItem('vexastore_user', JSON.stringify(user));
           localStorage.setItem('user', JSON.stringify(user));
