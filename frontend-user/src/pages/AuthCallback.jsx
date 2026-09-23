@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
+import { api } from '../services/api';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -12,9 +13,27 @@ export default function AuthCallback() {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const userParam = params.get('user');
+    const ssoSuccess = params.get('sso') === 'success';
 
     console.log('🔐 [AuthCallback] Full URL:', window.location.href);
     console.log('🔐 [AuthCallback] Token present:', !!token);
+
+    if (ssoSuccess && !token) {
+      api.get('/api/auth/profile').then((response) => {
+        const user = response.data?.data || response.data?.user || response.data;
+        if (user) {
+          localStorage.setItem('vexastore_user', JSON.stringify(user));
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('userData', JSON.stringify(user));
+        }
+        showSuccess('Login successful!');
+        navigate('/', { replace: true });
+      }).catch((error) => {
+        showError(error.response?.data?.message || 'SSO session could not be established.');
+        navigate('/login', { replace: true });
+      });
+      return;
+    }
 
     if (token) {
       // ✅ Store token with VexaStore keys
