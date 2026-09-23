@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
+import { vexaAccountApi, getApiErrorMessage } from '../services/api';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -39,13 +40,7 @@ export default function ResetPassword() {
     }
     try {
       setLoading(true);
-      const vexaAccountUrl = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
-      const response = await fetch(`${vexaAccountUrl}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword })
-      });
-      const data = await response.json();
+      const data = await vexaAccountApi.resetPassword({ token, newPassword });
       if (data.success) {
         showSuccess('Password reset successfully! Please login.');
         navigate('/login');
@@ -53,7 +48,7 @@ export default function ResetPassword() {
         showError(data.message || 'Failed to reset password');
       }
     } catch (err) {
-      showError(err.message || 'Failed to reset password');
+      showError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
