@@ -201,6 +201,10 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 async function ensureReleaseMetadataSchema() {
   const statements = [
+    // Keep the live database compatible with the admin app-management routes.
+    // Some existing VexaStore databases were created from an older apps schema.
+    `ALTER TABLE apps ADD COLUMN is_free TINYINT(1) NOT NULL DEFAULT 1`,
+    `ALTER TABLE apps ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0`,
     `ALTER TABLE app_versions ADD COLUMN sha256 VARCHAR(64) NULL`,
     `ALTER TABLE app_versions ADD COLUMN package_name VARCHAR(255) NULL`,
     `ALTER TABLE app_versions ADD COLUMN version_code BIGINT NULL`,
