@@ -3,7 +3,6 @@ import axios from 'axios';
 
 // ─── API BASE URLS ──────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-vexastore.onrender.com';
-const VEXA_ACCOUNT_URL = import.meta.env.VITE_VEXA_ACCOUNT_URL || 'https://api-vexaaccount.onrender.com';
 
 // ─── AXIOS INSTANCE ──────────────────────────────────────────────────
 export const api = axios.create({
@@ -12,7 +11,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true;
+  withCredentials: true,
 });
 
 // ─── REQUEST INTERCEPTOR ────────────────────────────────────────────
