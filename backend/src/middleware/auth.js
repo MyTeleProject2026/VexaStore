@@ -1,6 +1,7 @@
 // backend/src/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
+const cookie = require('cookie');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vexastore_jwt_secret_key_2024_secure';
 
@@ -14,7 +15,8 @@ const authAdmin = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Authentication required' });
     }
 
-    const token = authHeader.slice(7).trim();
+    let token = authHeader.slice(7).trim();
+    if (!token && req.headers.cookie) token = cookie.parse(req.headers.cookie).vexastore_session || '';
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Check if role is admin or super_admin
